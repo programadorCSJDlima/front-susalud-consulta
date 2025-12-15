@@ -1,6 +1,371 @@
+<script setup lang="ts">
+import { reactive, ref } from 'vue'
+import { apiClient } from '../services/apiClient'
+
+type ConsultaProcPayload = {
+  coExcepcion: string
+  txNombre: string
+  coIafa: string
+  tipodocument: string
+  document: string
+  apPaterno: string
+  apMaterno: string
+  nombres: string
+  coAfiliado: string
+  coProducto: string
+  deProducto: string
+  nuCobertura: string
+  caServicio: string
+  coCalservicio: string
+  beMaxInicial: string
+  coTiCobertura: string
+  coSuTiCobertura: string
+  coEspecialidad: string
+  nuPlan: string
+}
+
+type ConsultaProcDetalle = {
+  coInProcedimiento: string
+  coInRestriccion: string
+  coProcedimiento: string
+  imDeducible: string
+  poCuExDecimal: string
+  nuFrecuencia: string
+  coSexo: string
+  tiNuDias: string
+  teMsgObservacion: string
+  idFuentePE: string
+  coTiEspera: string
+  deTiEspera: string
+  feFinVigencia: string
+  teMsgTiEspera: string
+  idFuenteTE: string
+  coExCarencia: string
+  deExCarencia: string
+  teMsgExCarencia: string
+  idFuenteEC: string
+}
+
+type ConsultaProcDoc = {
+  noTransaccion: string
+  idRemitente: string
+  idReceptor: string
+  feTransaccion: string
+  hoTransaccion: string
+  idCorrelativo: string
+  idTransaccion: string
+  tiFinalidad: string
+  caRemitente: string
+  caReceptor: string
+  nuRucReceptor: string
+  caPaciente: string
+  apPaternoPaciente: string
+  noPaciente: string
+  coAfPaciente: string
+  apMaternoPaciente: string
+  inConProc271Detalles: ConsultaProcDetalle[]
+  nuControl: string | null
+  nuControlST: string | null
+}
+
+type ConsultaProcResponse = {
+  coError: string
+  txNombre: string
+  coIafa: string
+  txRespuesta: string
+  resultConPro?: ConsultaProcDoc[]
+}
+
+const endpoint = ref('/consultarProc')
+const loading = ref(false)
+const error = ref<string | null>(null)
+const expandedDocIndex = ref<number | null>(null)
+
+const formData = reactive<ConsultaProcPayload>({
+  coExcepcion: '0000',
+  txNombre: '270_CON_ASE',
+  coIafa: '20028',
+  tipodocument: '1',
+  document: '44960708',
+  apPaterno: 'SUAREZ',
+  apMaterno: '',
+  nombres: 'JUAN CARLOS',
+  coAfiliado: '13660',
+  coProducto: 'PS040',
+  deProducto: 'INTEGRAL PLUS INDIVIDUAL',
+  nuCobertura: '4',
+  caServicio: '1',
+  coCalservicio: 'Z3',
+  beMaxInicial: '50',
+  coTiCobertura: '4',
+  coSuTiCobertura: '001',
+  coEspecialidad: '006',
+  nuPlan: '21668A1',
+})
+
+const sampleResponse: ConsultaProcResponse = {
+  coError: '0000',
+  txNombre: '271_CON_PROC',
+  coIafa: '20028',
+  txRespuesta:
+    'ISA*00*          *00*          *ZZ*20028          *ZZ*00008786       *251210*1945*|*00501*000000001*0*T*:~GS*HI*20028          *00008786       *20251210*194551  *031803515*X *00501       ~ST*271*43142177 *                                   ~BHT*0022*11~HL*1           *            *20*1~NM1*PR *2*                                                            *                                   *                         *          *          *PI*20028               *  *   *                                                            ~HL*2           *1           *21*1~NM1*1P *2*                                                            *                                   *                         *          *          *SV*20563648202         *  *   *                                                            ~HL*3           *2           *22*0~NM1*IL *1*SUAREZ                                                      *JUAN CARLOS                        *                         *          *          *MI*13660               *  *   *LA TORRE                                                    ~EB*1 *   *                                   *   *                                                  *                                   *                  *          *  *   *   *                                   ~EB*1 *   *                                   *   *                                                  *                                   *                  *          *  *   *   *                                   ~EB*PE*   *                                   *   *                                                  *                                   *                  *          *5U*   *   *                                   *ZZ:   :                                   :  :  :  :                                                                                :                    ~HSD*9S*   ~MSG*                                                                                                                                                                                                                                                                        *  *  ~EB*TE*   *                                   *   *                                                  *                                   *                  *          *  *   *   *                                   ~REF*82 *                                                                                *                                                                                ~DTP*327*D8 *                                   ~MSG*                                                                                                                                                                                                                                                                        *  *  ~EB*EC*   *                                   *   *                                                  *                                   *                  *          *  *   *   *                                   ~REF*82 *                                                                                *                                                                                ~MSG*                                                                                                                                                                                                                                                                        *  *  ~SE*22        *43142177 ~GE*1     *031803515~IEA*1    *000000001~',
+  resultConPro: [
+    {
+      noTransaccion: '271_CON_PROC',
+      idRemitente: '20028',
+      idReceptor: '00008786',
+      feTransaccion: '20251210',
+      hoTransaccion: '194551',
+      idCorrelativo: '000000001',
+      idTransaccion: '271',
+      tiFinalidad: '11',
+      caRemitente: '2',
+      caReceptor: '2',
+      nuRucReceptor: '20563648202',
+      caPaciente: '1',
+      apPaternoPaciente: 'SUAREZ',
+      noPaciente: 'JUAN CARLOS',
+      coAfPaciente: '13660',
+      apMaternoPaciente: 'LA TORRE',
+      inConProc271Detalles: [
+        {
+          coInProcedimiento: '',
+          coInRestriccion: '',
+          coProcedimiento: '',
+          imDeducible: '',
+          poCuExDecimal: '',
+          nuFrecuencia: '',
+          coSexo: '',
+          tiNuDias: '',
+          teMsgObservacion: '',
+          idFuentePE: '',
+          coTiEspera: '',
+          deTiEspera: '',
+          feFinVigencia: '',
+          teMsgTiEspera: '',
+          idFuenteTE: '',
+          coExCarencia: '',
+          deExCarencia: '',
+          teMsgExCarencia: '',
+          idFuenteEC: '',
+        },
+      ],
+      nuControl: null,
+      nuControlST: null,
+    },
+  ],
+}
+
+const responseData = ref<ConsultaProcResponse | null>(sampleResponse)
+
+const enviarConsulta = async () => {
+  responseData.value = null
+  loading.value = true
+  error.value = null
+  expandedDocIndex.value = null
+  try {
+    const data = await apiClient.post<ConsultaProcResponse>(endpoint.value, formData)
+    responseData.value = data
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Error desconocido'
+    responseData.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+const toggleDetalles = (index: number) => {
+  expandedDocIndex.value = expandedDocIndex.value === index ? null : index
+}
+
+const getDetalleList = (doc: ConsultaProcDoc) => doc.inConProc271Detalles || []
+</script>
+
 <template>
   <section class="module-view">
     <h1>ConsultaProc</h1>
-    <p class="muted">Espacio disponible para el módulo ConsultaProc.</p>
+    <p class="muted">
+      Consulta procedimientos para el asegurado
+      <!-- <code>{{ endpoint }}</code>. La respuesta se muestra en el resumen y la tabla. -->
+    </p>
+
+    <div class="card-grid">
+      <div class="api-box">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Codigo</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>coExcepcion</td><td><input v-model="formData.coExcepcion" class="input" /></td></tr>
+              <tr><td>txNombre</td><td><input v-model="formData.txNombre" class="input" /></td></tr>
+              <tr><td>coIafa</td><td><input v-model="formData.coIafa" class="input" /></td></tr>
+              <tr><td>tipodocument</td><td><input v-model="formData.tipodocument" class="input" /></td></tr>
+              <tr><td>document</td><td><input v-model="formData.document" class="input" /></td></tr>
+              <tr><td>apPaterno</td><td><input v-model="formData.apPaterno" class="input" /></td></tr>
+              <tr><td>apMaterno</td><td><input v-model="formData.apMaterno" class="input" /></td></tr>
+              <tr><td>nombres</td><td><input v-model="formData.nombres" class="input" /></td></tr>
+              <tr><td>coAfiliado</td><td><input v-model="formData.coAfiliado" class="input" /></td></tr>
+              <tr><td>coProducto</td><td><input v-model="formData.coProducto" class="input" /></td></tr>
+              <tr><td>deProducto</td><td><input v-model="formData.deProducto" class="input" /></td></tr>
+              <tr><td>coEspecialidad</td><td><input v-model="formData.coEspecialidad" class="input" /></td></tr>
+              <tr><td>nuCobertura</td><td><input v-model="formData.nuCobertura" class="input" /></td></tr>
+              <tr><td>caServicio</td><td><input v-model="formData.caServicio" class="input" /></td></tr>
+              <tr><td>coCalservicio</td><td><input v-model="formData.coCalservicio" class="input" /></td></tr>
+              <tr><td>beMaxInicial</td><td><input v-model="formData.beMaxInicial" class="input" /></td></tr>
+              <tr><td>coTiCobertura</td><td><input v-model="formData.coTiCobertura" class="input" /></td></tr>
+              <tr><td>coSuTiCobertura</td><td><input v-model="formData.coSuTiCobertura" class="input" /></td></tr>
+              <tr><td>nuPlan</td><td><input v-model="formData.nuPlan" class="input" /></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="actions">
+          <button class="btn" type="button" :disabled="loading" @click="enviarConsulta">
+            {{ loading ? 'Consultando...' : 'Consultar' }}
+          </button>
+        </div>
+
+        <p v-if="error" class="error-text">Error: {{ error }}</p>
+      </div>
+
+      <div class="api-box">
+        <div class="box-header">
+          <p class="muted small">Respuesta</p>
+          <p class="muted small">Se actualiza tras cada consulta</p>
+        </div>
+
+        <div v-if="responseData && !error" class="summary-grid">
+          <div class="summary-item">
+            <p class="muted small">coError</p>
+            <p class="summary-value">{{ responseData.coError }}</p>
+          </div>
+          <div class="summary-item">
+            <p class="muted small">txNombre</p>
+            <p class="summary-value">{{ responseData.txNombre }}</p>
+          </div>
+          <div class="summary-item">
+            <p class="muted small">coIafa</p>
+            <p class="summary-value">{{ responseData.coIafa }}</p>
+          </div>
+        </div>
+
+        <div v-if="responseData && !error" class="output">
+          <p class="muted small">txRespuesta (EDI crudo)</p>
+          <pre class="code-block">{{ responseData.txRespuesta }}</pre>
+        </div>
+
+        <div class="table-wrapper response-table">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Transaccion</th>
+                <th>Remitente</th>
+                <th>Receptor</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Correlativo</th>
+                <th>IdTransaccion</th>
+                <th>Finalidad</th>
+                <th>CaRemitente</th>
+                <th>CaReceptor</th>
+                <th>RucReceptor</th>
+                <th>Paciente</th>
+                <th>Afiliado</th>
+                <th>Detalles</th>
+              </tr>
+            </thead>
+            <tbody v-if="responseData?.resultConPro?.length && !error">
+              <template v-for="(doc, index) in responseData.resultConPro" :key="doc.idCorrelativo || index">
+                <tr class="clickable-row" @click="toggleDetalles(index)">
+                  <td>{{ doc.noTransaccion }}</td>
+                  <td>{{ doc.idRemitente }}</td>
+                  <td>{{ doc.idReceptor }}</td>
+                  <td>{{ doc.feTransaccion }}</td>
+                  <td>{{ doc.hoTransaccion }}</td>
+                  <td>{{ doc.idCorrelativo }}</td>
+                  <td>{{ doc.idTransaccion }}</td>
+                  <td>{{ doc.tiFinalidad }}</td>
+                  <td>{{ doc.caRemitente }}</td>
+                  <td>{{ doc.caReceptor }}</td>
+                  <td>{{ doc.nuRucReceptor }}</td>
+                  <td>{{ doc.apPaternoPaciente }} {{ doc.apMaternoPaciente }} {{ doc.noPaciente }}</td>
+                  <td>{{ doc.coAfPaciente }}</td>
+                  <td>{{ getDetalleList(doc).length }} registro(s)</td>
+                </tr>
+                <tr v-if="expandedDocIndex === index">
+                  <td colspan="14">
+                    <div class="table-wrapper response-table details-scroll">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>Procedimiento</th>
+                            <th>Restriccion</th>
+                            <th>Codigo</th>
+                            <th>Deducible</th>
+                            <th>Cuota</th>
+                            <th>Frecuencia</th>
+                            <th>Sexo</th>
+                            <th>Duracion</th>
+                            <th>Observacion</th>
+                            <th>Espera</th>
+                            <th>Fin vigencia</th>
+                            <th>Msg espera</th>
+                            <th>Carencia</th>
+                            <th>Msg carencia</th>
+                          </tr>
+                        </thead>
+                        <tbody v-if="getDetalleList(doc).length">
+                          <tr v-for="(detalle, detailIndex) in getDetalleList(doc)" :key="detailIndex">
+                            <td>{{ detalle.coInProcedimiento }}</td>
+                            <td>{{ detalle.coInRestriccion }}</td>
+                            <td>{{ detalle.coProcedimiento }}</td>
+                            <td>{{ detalle.imDeducible }}</td>
+                            <td>{{ detalle.poCuExDecimal }}</td>
+                            <td>{{ detalle.nuFrecuencia }}</td>
+                            <td>{{ detalle.coSexo }}</td>
+                            <td>{{ detalle.tiNuDias }}</td>
+                            <td>{{ detalle.teMsgObservacion }}</td>
+                            <td>{{ detalle.deTiEspera }}</td>
+                            <td>{{ detalle.feFinVigencia }}</td>
+                            <td>{{ detalle.teMsgTiEspera }}</td>
+                            <td>{{ detalle.deExCarencia }}</td>
+                            <td>{{ detalle.teMsgExCarencia }}</td>
+                          </tr>
+                        </tbody>
+                        <tbody v-else>
+                          <tr>
+                            <td colspan="14" class="muted">Sin detalles.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+            <tbody v-else>
+              <tr>
+                <td colspan="14" class="muted">Aun no hay detalles.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
+
+<style scoped>
+.clickable-row {
+  cursor: pointer;
+}
+
+.details-scroll {
+  max-height: 360px;
+  overflow-y: auto;
+}
+</style>

@@ -50,7 +50,9 @@ a {
 }
 
 .sidebar {
-  width: 220px;
+  width: max-content;
+  min-width: 260px;
+  max-width: 340px;
   background: linear-gradient(180deg, var(--bg), #07101f 60%);
   padding: 20px 16px 18px;
   display: flex;
@@ -63,7 +65,7 @@ a {
   transform: translateX(-100%);
   transition: transform 0.3s ease;
   z-index: 12;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sidebar.open {
@@ -127,6 +129,7 @@ a {
   transition: all 0.2s ease;
   width: 100%;
   border: 1px solid transparent;
+  overflow: visible;
 }
 
 .nav-item:hover {
@@ -152,6 +155,7 @@ a {
 .nav-label {
   font-weight: 600;
   letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 .content {

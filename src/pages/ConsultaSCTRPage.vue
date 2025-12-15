@@ -42,18 +42,43 @@ type ConsultaSctrDetalle = {
   feOcAccidente: string
 }
 
+type ConsultaSctrDoc = {
+  noTransaccion: string
+  idRemitente: string
+  idReceptor: string
+  feTransaccion: string
+  hoTransaccion: string
+  idCorrelativo: string
+  idTransaccion: string
+  tiFinalidad: string
+  caRemitente: string
+  caReceptor: string
+  nuRucReceptor: string
+  caPaciente: string
+  apPaternoPaciente: string
+  noPaciente: string
+  coAfPaciente: string
+  apMaternoPaciente: string
+  coTiDoPaciente: string
+  nuDocPaciente: string
+  nuControl: string | null
+  nuControlST: string | null
+  in271ResSctrDetalles: ConsultaSctrDetalle[]
+}
+
 type ConsultaSctrResponse = {
   coError: string
   txNombre: string
   coIafa: string
   txRespuesta: string
-  detalles: ConsultaSctrDetalle[]
+  resultSctr?: ConsultaSctrDoc[]
 }
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085'
 const endpoint = ref('/consultarSctr')
 const loading = ref(false)
 const error = ref<string | null>(null)
+const expandedDocIndex = ref<number | null>(null)
 
 const formData = reactive<ConsultaSctrPayload>({
   coExcepcion: '0000',
@@ -83,22 +108,46 @@ const sampleResponse: ConsultaSctrResponse = {
   txNombre: '271_RES_SCTR',
   coIafa: '20028',
   txRespuesta: 'ISA*00*...~GS* HI*...~IEA*1 * 080332586 * ~ (ejemplo truncado)',
-  detalles: [
+  resultSctr: [
     {
-      tiCaContratante: '2',
-      noEmApPaContratante: 'COLTUR PERUANA DE TU',
-      coEmContratante: '00001',
-      idCaReContratante: '4A',
-      reIdContratante: '20100054184',
-      tiCaLuAtencion: '2',
-      noEmLuAtencion: 'CLINICA INTERNACIONAL',
-      coEmReLuAtencion: '980001C',
-      idCaReLuAtencion: '4A',
-      reIdLuAtencion: '20100973473',
-      coLuAtencion: '471000',
-      deTiAccidente: '',
-      feAfiliacion: '20040701',
-      feOcAccidente: '20150330',
+      noTransaccion: '271_RES_SCTR',
+      idRemitente: '980004A',
+      idReceptor: '980001C',
+      feTransaccion: '20070306',
+      hoTransaccion: '1709',
+      idCorrelativo: '080332586',
+      idTransaccion: '271',
+      tiFinalidad: '11',
+      caRemitente: '2',
+      caReceptor: '2',
+      nuRucReceptor: '20100054184',
+      caPaciente: '1',
+      apPaternoPaciente: 'BALLON',
+      noPaciente: 'ANGELA RITA',
+      coAfPaciente: '0000424421',
+      apMaternoPaciente: 'ARENAS',
+      coTiDoPaciente: '1',
+      nuDocPaciente: '08834001',
+      nuControl: null,
+      nuControlST: null,
+      in271ResSctrDetalles: [
+        {
+          tiCaContratante: '2',
+          noEmApPaContratante: 'COLTUR PERUANA DE TU',
+          coEmContratante: '00001',
+          idCaReContratante: '4A',
+          reIdContratante: '20100054184',
+          tiCaLuAtencion: '2',
+          noEmLuAtencion: 'CLINICA INTERNACIONAL',
+          coEmReLuAtencion: '980001C',
+          idCaReLuAtencion: '4A',
+          reIdLuAtencion: '20100973473',
+          coLuAtencion: '471000',
+          deTiAccidente: '',
+          feAfiliacion: '20040701',
+          feOcAccidente: '20150330',
+        },
+      ],
     },
   ],
 }
@@ -109,6 +158,7 @@ const enviarConsulta = async () => {
   responseData.value = null
   loading.value = true
   error.value = null
+  expandedDocIndex.value = null
   try {
     const data = await apiClient.post<ConsultaSctrResponse>(endpoint.value, formData)
     responseData.value = data
@@ -119,6 +169,12 @@ const enviarConsulta = async () => {
     loading.value = false
   }
 }
+
+const toggleDetalles = (index: number) => {
+  expandedDocIndex.value = expandedDocIndex.value === index ? null : index
+}
+
+const getDetalleList = (doc: ConsultaSctrDoc) => doc.in271ResSctrDetalles || []
 </script>
 
 <template>
@@ -127,7 +183,7 @@ const enviarConsulta = async () => {
     <p class="muted">
       Consulta accidentes del asegurado
        <!-- <code>{{ apiBaseUrl }}{{ endpoint }}</code>. La respuesta incluye
-      el EDI y los datos del contratante y lugar de atención. -->
+      el EDI y los datos del contratante y lugar de atencion. -->
     </p>
 
     <div class="card-grid">
@@ -136,7 +192,7 @@ const enviarConsulta = async () => {
           <table class="data-table">
             <thead>
               <tr>
-                <th>Código</th>
+                <th>Codigo</th>
                 <th>Valor</th>
               </tr>
             </thead>
@@ -204,31 +260,90 @@ const enviarConsulta = async () => {
           <table class="data-table">
             <thead>
               <tr>
-                <th>Tipo Contratante</th>
-                <th>Contratante</th>
-                <th>ID Contratante</th>
-                <th>Lugar atención</th>
-                <th>ID Lugar</th>
-                <th>Accidente</th>
-                <th>Afiliación</th>
-                <th>Fecha Accidente</th>
+                <th>Transaccion</th>
+                <th>Remitente</th>
+                <th>Receptor</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Correlativo</th>
+                <th>IdTransaccion</th>
+                <th>Finalidad</th>
+                <th>CaRemitente</th>
+                <th>CaReceptor</th>
+                <th>RucReceptor</th>
+                <th>CaPaciente</th>
+                <th>Paciente</th>
+                <th>Afiliado</th>
+                <th>Documento</th>
+                <th>Control</th>
+                <th>Control ST</th>
+                <th>Detalles</th>
               </tr>
             </thead>
-            <tbody v-if="responseData?.detalles?.length && !error">
-              <tr v-for="(detalle, index) in responseData.detalles" :key="index">
-                <td>{{ detalle.tiCaContratante }}</td>
-                <td>{{ detalle.noEmApPaContratante }}</td>
-                <td>{{ detalle.idCaReContratante }}: {{ detalle.reIdContratante }}</td>
-                <td>{{ detalle.noEmLuAtencion }}</td>
-                <td>{{ detalle.idCaReLuAtencion }}: {{ detalle.reIdLuAtencion }}</td>
-                <td>{{ detalle.deTiAccidente || '—' }}</td>
-                <td>{{ detalle.feAfiliacion }}</td>
-                <td>{{ detalle.feOcAccidente }}</td>
-              </tr>
+            <tbody v-if="responseData?.resultSctr?.length && !error">
+              <template v-for="(doc, index) in responseData.resultSctr" :key="doc.idCorrelativo || index">
+                <tr class="clickable-row" @click="toggleDetalles(index)">
+                  <td>{{ doc.noTransaccion }}</td>
+                  <td>{{ doc.idRemitente }}</td>
+                  <td>{{ doc.idReceptor }}</td>
+                  <td>{{ doc.feTransaccion }}</td>
+                  <td>{{ doc.hoTransaccion }}</td>
+                  <td>{{ doc.idCorrelativo }}</td>
+                  <td>{{ doc.idTransaccion }}</td>
+                  <td>{{ doc.tiFinalidad }}</td>
+                  <td>{{ doc.caRemitente }}</td>
+                  <td>{{ doc.caReceptor }}</td>
+                  <td>{{ doc.nuRucReceptor }}</td>
+                  <td>{{ doc.caPaciente }}</td>
+                  <td>{{ doc.apPaternoPaciente }} {{ doc.apMaternoPaciente }} {{ doc.noPaciente }}</td>
+                  <td>{{ doc.coAfPaciente }}</td>
+                  <td>{{ doc.coTiDoPaciente }} - {{ doc.nuDocPaciente }}</td>
+                  <td>{{ doc.nuControl ?? '-' }}</td>
+                  <td>{{ doc.nuControlST ?? '-' }}</td>
+                  <td>{{ getDetalleList(doc).length }} registro(s)</td>
+                </tr>
+                <tr v-if="expandedDocIndex === index">
+                  <td colspan="18">
+                    <div class="table-wrapper response-table details-scroll">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>Tipo Contratante</th>
+                            <th>Contratante</th>
+                            <th>ID Contratante</th>
+                            <th>Lugar atencion</th>
+                            <th>ID Lugar</th>
+                            <th>Accidente</th>
+                            <th>Afiliacion</th>
+                            <th>Fecha Accidente</th>
+                          </tr>
+                        </thead>
+                        <tbody v-if="getDetalleList(doc).length">
+                          <tr v-for="(detalle, detailIndex) in getDetalleList(doc)" :key="detailIndex">
+                            <td>{{ detalle.tiCaContratante }}</td>
+                            <td>{{ detalle.noEmApPaContratante }}</td>
+                            <td>{{ detalle.idCaReContratante }}: {{ detalle.reIdContratante }}</td>
+                            <td>{{ detalle.noEmLuAtencion }}</td>
+                            <td>{{ detalle.idCaReLuAtencion }}: {{ detalle.reIdLuAtencion }}</td>
+                            <td>{{ detalle.deTiAccidente || '-' }}</td>
+                            <td>{{ detalle.feAfiliacion }}</td>
+                            <td>{{ detalle.feOcAccidente }}</td>
+                          </tr>
+                        </tbody>
+                        <tbody v-else>
+                          <tr>
+                            <td colspan="8" class="muted">Sin detalles.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              </template>
             </tbody>
             <tbody v-else>
               <tr>
-                <td colspan="8" class="muted">Aún no hay detalles.</td>
+                <td colspan="18" class="muted">Aun no hay detalles.</td>
               </tr>
             </tbody>
           </table>
@@ -237,3 +352,18 @@ const enviarConsulta = async () => {
     </div>
   </section>
 </template>
+
+<style scoped>
+.clickable-row {
+  cursor: pointer;
+}
+
+.data-table th {
+  white-space: nowrap;
+}
+
+.details-scroll {
+  max-height: 360px;
+  overflow-y: auto;
+}
+</style>

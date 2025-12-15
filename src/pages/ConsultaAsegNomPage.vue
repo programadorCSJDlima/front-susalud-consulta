@@ -40,18 +40,37 @@ type ConsultaAsegNomDetalle = {
   coReContratante: string
 }
 
+type ConsultaAsegNomDoc = {
+  noTransaccion: string
+  idRemitente: string
+  idReceptor: string
+  feTransaccion: string
+  hoTransaccion: string
+  idCorrelativo: string
+  idTransaccion: string
+  tiFinalidad: string
+  caRemitente: string
+  caReceptor: string
+  nuRucReceptor: string | null
+  inConNom271Detalles: ConsultaAsegNomDetalle[]
+  nuControl: string | null
+  nuControlST: string | null
+  detalles?: ConsultaAsegNomDetalle[]
+}
+
 type ConsultaAsegNomResponse = {
   coError: string
   txNombre: string
   coIafa: string
   txRespuesta: string
-  detalles: ConsultaAsegNomDetalle[]
+  resultNomDoc: ConsultaAsegNomDoc[]
 }
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085'
 const endpoint = ref('/consultarAseguradoxNom')
 const loading = ref(false)
 const error = ref<string | null>(null)
+const expandedDocIndex = ref<number | null>(null)
 
 const formData = reactive<ConsultaAsegNomPayload>({
   coExcepcion: '0000',
@@ -67,113 +86,80 @@ const formData = reactive<ConsultaAsegNomPayload>({
 const sampleResponse: ConsultaAsegNomResponse = {
   coError: '0000',
   txNombre: '271_CON_NOM',
-  coIafa: '20004',
+  coIafa: '20028',
   txRespuesta:
-    'ISA*00*          *00*          *ZZ*20004          *ZZ*00008786       *251204*0829*|*00501*009430636*0*T*:~GS*HB*20004          *00008786       *20251204*082902  *028428433*X *00501       ~ST*271*80043177 *                                   ~BHT*0022*11~HL*1           *            *20*1~NM1*PR *2*                                                            *                                   *                         *          *          *PI*20004               *  *   *                                                            ~HL*2           *1           *21*1~NM1*1P *2*                                                            *                                   *                         *          *          *FI*20144442629         *  *   *                                                            ~HL*3           *2           *22*0~NM1*IL *6*RAMOS                                                       *JUAN                               *                         *          *          *MI*0009209882          *  *   *ISLA                                                        ~REF*ACC*6                                                                               *                                                                                ~REF*DD *1                                                                               *                                                                                *4A :16774765            :   :                    :   :                    ~REF*CT *666108                                                                          *                                                                                ~REF*PRT*R                                                                               *SEGURO COMPLEM. TRABAJO DE RIESGO                                               *ZZ :                    :   :                    :   :                    ~REF*ZZ *1                                                                               *                                                                                ~REF*18 *20                                                                              *                                                                                ~DMG*D8 *19761109                           *1*1*                    *  *   ~NM1*P5 * *AGRICOLA CERRO PRIETO S.A.                                  *AGRICOLA CERRO PRIETO S.A. AGRICOLA*                         *          *          *  *                    *  *   *AGRICOLA CERRO PRIETO S.A.                                  ~REF*DD *2                                                                               *                                                                                *XX5:20461642706         :   :                    :   :                    ~NM1*IL *6*RAMOS                                                       *JUAN JOSE                          *                         *          *          *MI*0009276729          *  *   *LOBATON                                                     ~REF*ACC*6                                                                               *                                                                                ~REF*DD *1                                                                               *                                                                                *4A :40823681            :   :                    :   :                    ~REF*CT *669128                                                                          *                                                                                ~REF*PRT*R                                                                               *SEGURO COMPLEM. TRABAJO DE RIESGO                                               *ZZ :                    :   :                    :   :                    ~REF*ZZ *1                                                                               *                                                                                ~REF*18 *20                                                                              *                                                                                ~DMG*D8 *19801230                           *1*1*                    *  *   ~NM1*P5 * *MUNICIPALIDAD DE SANTIAGO DE SURCO                          *MUNICIPALIDAD DE SANTIAGO DE SURCO *                         *          *          *  *                    *  *   *MUNICIPALIDAD DE SANTIAGO DE SURCO                          ~REF*DD *2                                                                               *                                                                                *XX5:20131367423         :   :                    :   :                    ~NM1*IL *6*RAMOS                                                       *JUAN                               *                         *          *          *MI*0009494837          *  *   *NUÑEZ                                                       ~REF*ACC*6                                                                               *                                                                                ~REF*DD *1                                                                               *                                                                                *4A :20719533            :   :                    :   :                    ~REF*CT *821742                                                                          *                                                                                ~REF*PRT*R                                                                               *SEGURO COMPLEM. TRABAJO DE RIESGO                                               *ZZ :                    :   :                    :   :                    ~REF*ZZ *1                                                                               *                                                                                ~REF*18 *20                                                                              *                                                                                ~DMG*D8 *19681227                           *1*1*                    *  *   ~NM1*P5 * *TRANSPORTES Y SERVICIOS DINAMO E.I.R.L. - TRASERDIN E.I.R.L.*TRANSPORTES Y SERVICIOS DINAMO E.I.*                         *          *          *  *                    *  *   *TRANSPORTES Y SERVICIOS DINAMO E.I.R.L. - TRASERDIN E.I.R.L.~REF*DD *2                                                                               *                                                                                *XX5:20517635058         :   :                    :   :                    ~NM1*IL *6*RAMOS                                                       *JUAN RUPERTO                       *                         *          *          *MI*0009473240          *  *   *DURAND                                                      ~REF*ACC*6                                                                               *                                                                                ~REF*DD *1                                                                               *                                                                                *4A :44741346            :   :                    :   :                    ~REF*CT *367003                                                                          *                                                                                ~REF*PRT*R                                                                               *SEGURO COMPLEM. TRABAJO DE RIESGO                                               *ZZ :                    :   :                    :   :                    ~REF*ZZ *1                                                                               *                                                                                ~REF*18 *20                                                                              *                                                                                ~DMG*D8 *19860429                           *1*1*                    *  *   ~NM1*P5 * *ECO-RIN S.A.C.                                              *ECO-RIN S.A.C. ECO-RIN S.A.C.      *                         *          *          *  *                    *  *   *ECO-RIN S.A.C.                                              ~REF*DD *2                                                                               *                                                                                *XX5:20523354851         :   :                    :   :                    ~SE*49        *80043177 ~GE*1     *028428433~IEA*1    *009430636~',
-  detalles: [
+    'ISA*00*          *00*          *ZZ*20028          *ZZ*00008786       *251210*1941*|*00501*000000001*0*T*:~GS*HB*20028          *00008786       *20251210*194159  *022625147*X *00501       ~ST*271*89055126 *                                   ~BHT*0022*11~HL*1           *            *20*1~NM1*PR *2*                                                            *                                   *                         *          *          *PI*20028               *  *   *                                                            ~HL*2           *1           *21*1~NM1*1P *2*                                                            *                                   *                         *          *          *FI*20563648202         *  *   *                                                            ~HL*3           *2           *22*0~NM1*IL *1*SUAREZ                                                      *JUAN CARLOS                        *                         *          *          *MI*13660               *  *   *LA TORRE                                                    ~REF*ACC*1                                                                               *                                                                                ~REF*DD *1                                                                               *                                                                                *4A :44960708            :   :                    :   :                    ~REF*CT *21668A1                                                                         *                                                                                ~REF*PRT*PS040                                                                           *INTEGRAL PLUS INDIVIDUAL                                                        *ZZ :                    :   :                    :   :                    ~REF*ZZ *5                                                                               *                                                                                ~REF*18 *21668A1                                                                         *                                                                                ~DMG*D8 *19870724                           *2*1*                    *  *   ~NM1*P5 *1*LA TORRE                                                    *NORMA CECILIA                      *                         *          *          *  *                    *  *   *SILVA                                                       ~REF*DD *1                                                                               *                                                                                *XX5:07411059            :   :                    :   :                    ~SE*19        *89055126 ~GE*1     *022625147~IEA*1    *000000001~',
+  resultNomDoc: [
     {
-      caPaciente: '6',
-      apPaternoPaciente: 'RAMOS',
-      noPaciente: 'JUAN',
-      coAfPaciente: '0009209882',
-      apMaternoPaciente: 'ISLA',
-      coEsPaciente: '6',
-      tiDoPaciente: '1',
-      nuDoPaciente: '16774765',
-      nuContratoPaciente: '666108',
-      coProducto: 'R',
-      coDescripcion: 'SEGURO COMPLEM. TRABAJO DE RIESGO',
-      nuSCTR: '',
-      coParentesco: '1',
-      nuPlan: '20',
-      feNacimiento: '19761109',
-      genero: '1',
-      esMarital: '1',
-      tiCaContratante: '',
-      noPaContratante: 'AGRICOLA CERRO PRIETO S.A.',
-      noContratante: 'AGRICOLA CERRO PRIETO S.A. AGRICOLA',
-      noMaContratante: 'AGRICOLA CERRO PRIETO S.A.',
-      tiDoContratante: '2',
-      idReContratante: 'XX5',
-      coReContratante: '20461642706',
-    },
-    {
-      caPaciente: '6',
-      apPaternoPaciente: 'RAMOS',
-      noPaciente: 'JUAN JOSE',
-      coAfPaciente: '0009276729',
-      apMaternoPaciente: 'LOBATON',
-      coEsPaciente: '6',
-      tiDoPaciente: '1',
-      nuDoPaciente: '40823681',
-      nuContratoPaciente: '669128',
-      coProducto: 'R',
-      coDescripcion: 'SEGURO COMPLEM. TRABAJO DE RIESGO',
-      nuSCTR: '',
-      coParentesco: '1',
-      nuPlan: '20',
-      feNacimiento: '19801230',
-      genero: '1',
-      esMarital: '1',
-      tiCaContratante: '',
-      noPaContratante: 'MUNICIPALIDAD DE SANTIAGO DE SURCO',
-      noContratante: 'MUNICIPALIDAD DE SANTIAGO DE SURCO',
-      noMaContratante: 'MUNICIPALIDAD DE SANTIAGO DE SURCO',
-      tiDoContratante: '2',
-      idReContratante: 'XX5',
-      coReContratante: '20131367423',
-    },
-    {
-      caPaciente: '6',
-      apPaternoPaciente: 'RAMOS',
-      noPaciente: 'JUAN',
-      coAfPaciente: '0009494837',
-      apMaternoPaciente: 'NUÑEZ',
-      coEsPaciente: '6',
-      tiDoPaciente: '1',
-      nuDoPaciente: '20719533',
-      nuContratoPaciente: '821742',
-      coProducto: 'R',
-      coDescripcion: 'SEGURO COMPLEM. TRABAJO DE RIESGO',
-      nuSCTR: '',
-      coParentesco: '1',
-      nuPlan: '20',
-      feNacimiento: '19681227',
-      genero: '1',
-      esMarital: '1',
-      tiCaContratante: '',
-      noPaContratante: 'TRANSPORTES Y SERVICIOS DINAMO E.I.R.L. - TRASERDIN E.I.R.L.',
-      noContratante: 'TRANSPORTES Y SERVICIOS DINAMO E.I.',
-      noMaContratante: 'TRANSPORTES Y SERVICIOS DINAMO E.I.R.L. - TRASERDIN E.I.R.L.',
-      tiDoContratante: '2',
-      idReContratante: 'XX5',
-      coReContratante: '20517635058',
-    },
-    {
-      caPaciente: '6',
-      apPaternoPaciente: 'RAMOS',
-      noPaciente: 'JUAN RUPERTO',
-      coAfPaciente: '0009473240',
-      apMaternoPaciente: 'DURAND',
-      coEsPaciente: '6',
-      tiDoPaciente: '1',
-      nuDoPaciente: '44741346',
-      nuContratoPaciente: '367003',
-      coProducto: 'R',
-      coDescripcion: 'SEGURO COMPLEM. TRABAJO DE RIESGO',
-      nuSCTR: '',
-      coParentesco: '1',
-      nuPlan: '20',
-      feNacimiento: '19860429',
-      genero: '1',
-      esMarital: '1',
-      tiCaContratante: '',
-      noPaContratante: 'ECO-RIN S.A.C.',
-      noContratante: 'ECO-RIN S.A.C. ECO-RIN S.A.C.',
-      noMaContratante: 'ECO-RIN S.A.C.',
-      tiDoContratante: '2',
-      idReContratante: 'XX5',
-      coReContratante: '20523354851',
+      noTransaccion: '271_CON_NOM',
+      idRemitente: '20028',
+      idReceptor: '00008786',
+      feTransaccion: '20251210',
+      hoTransaccion: '194159',
+      idCorrelativo: '000000001',
+      idTransaccion: '271',
+      tiFinalidad: '11',
+      caRemitente: '2',
+      caReceptor: '2',
+      nuRucReceptor: '20563648202',
+      inConNom271Detalles: [
+        {
+          caPaciente: '1',
+          apPaternoPaciente: 'SUAREZ',
+          noPaciente: 'JUAN CARLOS',
+          coAfPaciente: '13660',
+          apMaternoPaciente: 'LA TORRE',
+          coEsPaciente: '1',
+          tiDoPaciente: '1',
+          nuDoPaciente: '44960708',
+          nuContratoPaciente: '21668A1',
+          coProducto: 'PS040',
+          coDescripcion: 'INTEGRAL PLUS INDIVIDUAL',
+          nuSCTR: '',
+          coParentesco: '5',
+          nuPlan: '21668A1',
+          feNacimiento: '19870724',
+          genero: '2',
+          esMarital: '1',
+          tiCaContratante: '1',
+          noPaContratante: 'LA TORRE',
+          noContratante: 'NORMA CECILIA',
+          noMaContratante: 'SILVA',
+          tiDoContratante: '1',
+          idReContratante: 'XX5',
+          coReContratante: '07411059',
+        },
+      ],
+      nuControl: null,
+      nuControlST: null,
+      detalles: [
+        {
+          caPaciente: '1',
+          apPaternoPaciente: 'SUAREZ',
+          noPaciente: 'JUAN CARLOS',
+          coAfPaciente: '13660',
+          apMaternoPaciente: 'LA TORRE',
+          coEsPaciente: '1',
+          tiDoPaciente: '1',
+          nuDoPaciente: '44960708',
+          nuContratoPaciente: '21668A1',
+          coProducto: 'PS040',
+          coDescripcion: 'INTEGRAL PLUS INDIVIDUAL',
+          nuSCTR: '',
+          coParentesco: '5',
+          nuPlan: '21668A1',
+          feNacimiento: '19870724',
+          genero: '2',
+          esMarital: '1',
+          tiCaContratante: '1',
+          noPaContratante: 'LA TORRE',
+          noContratante: 'NORMA CECILIA',
+          noMaContratante: 'SILVA',
+          tiDoContratante: '1',
+          idReContratante: 'XX5',
+          coReContratante: '07411059',
+        },
+      ],
     },
   ],
 }
@@ -183,7 +169,7 @@ const responseData = ref<ConsultaAsegNomResponse | null>(sampleResponse)
 const enviarConsulta = async () => {
   if (!formData.apatern.trim()) {
     if (!formData.tiDoPaciente.trim() || !formData.nuDoPaciente.trim()) {
-      error.value = 'Si no se envía apatern, tiDoPaciente y nuDoPaciente son obligatorios.'
+      error.value = 'Si no se envia apatern, tiDoPaciente y nuDoPaciente son obligatorios.'
       return
     }
   }
@@ -201,13 +187,21 @@ const enviarConsulta = async () => {
     loading.value = false
   }
 }
+
+const toggleDetalles = (index: number) => {
+  expandedDocIndex.value = expandedDocIndex.value === index ? null : index
+}
+
+const getDetalleList = (doc: ConsultaAsegNomDoc) => {
+  return doc.inConNom271Detalles?.length ? doc.inConNom271Detalles : doc.detalles || []
+}
 </script>
 
 <template>
   <section class="module-view">
     <h1>ConsultaAsegNom</h1>
     <p class="muted">
-      Consulta los datos dela asegurado por nombre o documento 
+      Consulta los datos del asegurado por nombre o documento
       <!-- <code>{{ apiBaseUrl }}{{ endpoint }}</code>. La respuesta se muestra en el resumen y la tabla
       de detalles. -->
     </p>
@@ -218,7 +212,7 @@ const enviarConsulta = async () => {
           <table class="data-table">
             <thead>
               <tr>
-                <th>Código</th>
+                <th>Codigo</th>
                 <th>Valor</th>
               </tr>
             </thead>
@@ -298,36 +292,73 @@ const enviarConsulta = async () => {
           <table class="data-table">
             <thead>
               <tr>
-                <th>caPaciente</th>
-                <th>Paciente</th>
-                <th>Doc</th>
-                <th>Contrato</th>
-                <th>Producto</th>
-                <th>Descripción</th>
-                <th>Nacimiento</th>
-                <th>Parentesco</th>
-                <th>Contratante</th>
+                <th>Transaccion</th>
+                <th>Remitente</th>
+                <th>Receptor</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Correlativo</th>
+                <th>Detalles</th>
               </tr>
             </thead>
-            <tbody v-if="responseData?.detalles?.length && !error">
-              <tr v-for="(detalle, index) in responseData.detalles" :key="index">
-                <td>{{ detalle.caPaciente }}</td>
-                <td>
-                  {{ detalle.apPaternoPaciente }} {{ detalle.apMaternoPaciente }}
-                  {{ detalle.noPaciente }}
-                </td>
-                <td>{{ detalle.tiDoPaciente }} - {{ detalle.nuDoPaciente }}</td>
-                <td>{{ detalle.nuContratoPaciente }}</td>
-                <td>{{ detalle.coProducto }}</td>
-                <td>{{ detalle.coDescripcion }}</td>
-                <td>{{ detalle.feNacimiento }}</td>
-                <td>{{ detalle.coParentesco }}</td>
-                <td>{{ detalle.noContratante }}</td>
-              </tr>
+            <tbody v-if="responseData?.resultNomDoc?.length && !error">
+              <template v-for="(doc, index) in responseData.resultNomDoc" :key="doc.idCorrelativo || index">
+                <tr class="clickable-row" @click="toggleDetalles(index)">
+                  <td>{{ doc.noTransaccion }}</td>
+                  <td>{{ doc.idRemitente }}</td>
+                  <td>{{ doc.idReceptor }}</td>
+                  <td>{{ doc.feTransaccion }}</td>
+                  <td>{{ doc.hoTransaccion }}</td>
+                  <td>{{ doc.idCorrelativo }}</td>
+                  <td>{{ getDetalleList(doc).length }} registro(s)</td>
+                </tr>
+                <tr v-if="expandedDocIndex === index">
+                  <td colspan="7">
+                    <div class="table-wrapper response-table">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>caPaciente</th>
+                            <th>Paciente</th>
+                            <th>Doc</th>
+                            <th>Contrato</th>
+                            <th>Producto</th>
+                            <th>Descripcion</th>
+                            <th>Nacimiento</th>
+                            <th>Parentesco</th>
+                            <th>Contratante</th>
+                          </tr>
+                        </thead>
+                        <tbody v-if="getDetalleList(doc).length">
+                          <tr v-for="(detalle, detailIndex) in getDetalleList(doc)" :key="detailIndex">
+                            <td>{{ detalle.caPaciente }}</td>
+                            <td>
+                              {{ detalle.apPaternoPaciente }} {{ detalle.apMaternoPaciente }}
+                              {{ detalle.noPaciente }}
+                            </td>
+                            <td>{{ detalle.tiDoPaciente }} - {{ detalle.nuDoPaciente }}</td>
+                            <td>{{ detalle.nuContratoPaciente }}</td>
+                            <td>{{ detalle.coProducto }}</td>
+                            <td>{{ detalle.coDescripcion }}</td>
+                            <td>{{ detalle.feNacimiento }}</td>
+                            <td>{{ detalle.coParentesco }}</td>
+                            <td>{{ detalle.noContratante }}</td>
+                          </tr>
+                        </tbody>
+                        <tbody v-else>
+                          <tr>
+                            <td colspan="9" class="muted">Sin detalles.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              </template>
             </tbody>
             <tbody v-else>
               <tr>
-                <td colspan="9" class="muted">Aún no hay detalles.</td>
+                <td colspan="7" class="muted">Aun no hay detalles.</td>
               </tr>
             </tbody>
           </table>
@@ -336,3 +367,9 @@ const enviarConsulta = async () => {
     </div>
   </section>
 </template>
+
+<style scoped>
+.clickable-row {
+  cursor: pointer;
+}
+</style>

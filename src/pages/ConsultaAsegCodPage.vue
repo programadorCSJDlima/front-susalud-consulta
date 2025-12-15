@@ -25,7 +25,7 @@ type ConsultaAsegCodPayload = {
   coReContratante: string
 }
 
-type ConsultaAsegCodDetalle = {
+type ConsultaAsegCodBeneficio = {
   infBeneficio: string
   nuCobertura: string
   beMaxInicial: string
@@ -48,18 +48,80 @@ type ConsultaAsegCodDetalle = {
   feFinEspera: string
 }
 
+type ConsultaAsegCodDoc = {
+  noTransaccion: string
+  idRemitente: string
+  idReceptor: string
+  feTransaccion: string
+  hoTransaccion: string
+  idCorrelativo: string
+  idTransaccion: string
+  tiFinalidad: string
+  caRemitente: string
+  userRemitente: string
+  passRemitente: string
+  feUpFoto: string
+  caReceptor: string
+  nuRucReceptor: string
+  caPaciente: string
+  apPaternoPaciente: string
+  noPaciente: string
+  coAfPaciente: string
+  apMaternoPaciente: string
+  coEsPaciente: string
+  tiDoPaciente: string
+  nuDoPaciente: string
+  nuIdenPaciente: string
+  nuContratoPaciente: string
+  nuPoliza: string
+  nuCertificado: string
+  coTiPoliza: string
+  coProducto: string
+  deProducto: string
+  nuPlan: string
+  tiPlanSalud: string
+  coMoneda: string
+  coParentesco: string
+  soBeneficio: string
+  nuSoBeneficio: string
+  feNacimiento: string
+  genero: string
+  esMarital: string
+  feIniVigencia: string
+  feFinVigencia: string
+  tiCaContratante: string
+  noPaContratante: string
+  noContratante: string
+  noMaContratante: string
+  tiDoContratante: string
+  idReContratante: string
+  coReContratante: string
+  caTitular: string
+  noPaTitular: string
+  noTitular: string
+  coAfTitular: string
+  noMaTitular: string
+  tiDoTitular: string
+  nuDoTitular: string
+  feInsTitular: string
+  nuControl: string | null
+  nuControlST: string | null
+  inConCod271Detalles: ConsultaAsegCodBeneficio[]
+}
+
 type ConsultaAsegCodResponse = {
   coError: string
   txNombre: string
   coIafa: string
   txRespuesta: string
-  detalles: ConsultaAsegCodDetalle[]
+  resultCod?: ConsultaAsegCodDoc[]
 }
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085'
 const endpoint = ref('/consultarAseguradoxCod')
 const loading = ref(false)
 const error = ref<string | null>(null)
+const expandedDocIndex = ref<number | null>(null)
 
 const formData = reactive<ConsultaAsegCodPayload>({
   coExcepcion: '0000',
@@ -88,251 +150,135 @@ const sampleResponse: ConsultaAsegCodResponse = {
   coError: '0000',
   txNombre: '271_CON_COD',
   coIafa: '20028',
-  txRespuesta:
-    'ISA*00*          *00*          *ZZ*20028 ... (truncado de ejemplo EDI)',
-  detalles: [
+  txRespuesta: 'ISA*00*          *00*          *ZZ*20028 ... (truncado de ejemplo EDI)',
+  resultCod: [
     {
-      infBeneficio: '1',
-      nuCobertura: '4',
-      beMaxInicial: '15000.0000',
-      moCobertura: '',
-      coInRestriccion: '0',
-      canServicio: '',
-      idProducto: '',
-      coTiCobertura: '4',
-      coSubTiCobertura: '100',
-      msgObs: '',
-      msgConEspeciales: '',
-      coTiMoneda: '1',
-      coPagoFijo: '35.0000',
-      coCalServicio: '01',
-      canCalServicio: '',
-      coPagoVariable: '65.0000',
-      flagCaGarantia: '0',
-      deflagCaGarantia: '',
-      feFinCarencia: '',
-      feFinEspera: '',
-    },
-    {
-      infBeneficio: '1',
-      nuCobertura: '4',
-      beMaxInicial: '15000.0000',
-      moCobertura: '',
-      coInRestriccion: '1',
-      canServicio: '',
-      idProducto: '',
-      coTiCobertura: '4',
-      coSubTiCobertura: '266',
-      msgObs:
-        'LAS PREEXISTENCIAS TIPO A SOLO SON: HIPERTENSIÓN, DIABETES, DISLIPIDEMIA, OTITIS, HIPERTIROIDISMO, HIPOTIROIDISMO, ASMA, GASTRITIS Y BRONQUITIS CRÓNICAS O DE ACUERDO A LO QUE LAS CONDICIONES MEDICAS INDICADAS EN SITEDS',
-      msgConEspeciales: '',
-      coTiMoneda: '1',
-      coPagoFijo: '35.0000',
-      coCalServicio: '01',
-      canCalServicio: '',
-      coPagoVariable: '50.0000',
-      flagCaGarantia: '0',
-      deflagCaGarantia: '',
-      feFinCarencia: '',
-      feFinEspera: '',
-    },
-    {
-      infBeneficio: '1',
-      nuCobertura: '4',
-      beMaxInicial: '15000.0000',
-      moCobertura: '',
-      coInRestriccion: '0',
-      canServicio: '',
-      idProducto: '',
-      coTiCobertura: '4',
-      coSubTiCobertura: '267',
-      msgObs: '',
-      msgConEspeciales: '',
-      coTiMoneda: '1',
-      coPagoFijo: '35.0000',
-      coCalServicio: '01',
-      canCalServicio: '',
-      coPagoVariable: '5.0000',
-      flagCaGarantia: '0',
-      deflagCaGarantia: '',
-      feFinCarencia: '',
-      feFinEspera: '',
-    },
-    {
-      infBeneficio: '1',
-      nuCobertura: '4',
-      beMaxInicial: '15000.0000',
-      moCobertura: '',
-      coInRestriccion: '0',
-      canServicio: '',
-      idProducto: '',
-      coTiCobertura: '4',
-      coSubTiCobertura: '605',
-      msgObs: '',
-      msgConEspeciales: '',
-      coTiMoneda: '1',
-      coPagoFijo: '0.0000',
-      coCalServicio: '01',
-      canCalServicio: '',
-      coPagoVariable: '70.0000',
-      flagCaGarantia: '0',
-      deflagCaGarantia: '',
-      feFinCarencia: '',
-      feFinEspera: '',
-    },
-    {
-      infBeneficio: '1',
-      nuCobertura: '5',
-      beMaxInicial: '15000.0000',
-      moCobertura: '',
-      coInRestriccion: '1',
-      canServicio: '',
-      idProducto: '',
-      coTiCobertura: '5',
-      coSubTiCobertura: '272',
-      msgObs: 'HASTA S/20,000 (AMBULATORIO + HOSPITALARIO)',
-      msgConEspeciales: '',
-      coTiMoneda: '1',
-      coPagoFijo: '1.0000',
-      coCalServicio: '01',
-      canCalServicio: '',
-      coPagoVariable: '65.0000',
-      flagCaGarantia: '0',
-      deflagCaGarantia: '',
-      feFinCarencia: '',
-      feFinEspera: '',
-    },
-    {
-      infBeneficio: '1',
-      nuCobertura: '5',
-      beMaxInicial: '15000.0000',
-      moCobertura: '',
-      coInRestriccion: '1',
-      canServicio: '',
-      idProducto: '',
-      coTiCobertura: '5',
-      coSubTiCobertura: '271',
-      msgObs: 'HASTA S/20,000 (AMBULATORIO + HOSPITALARIO)',
-      msgConEspeciales: '',
-      coTiMoneda: '1',
-      coPagoFijo: '1.0000',
-      coCalServicio: '01',
-      canCalServicio: '',
-      coPagoVariable: '65.0000',
-      flagCaGarantia: '0',
-      deflagCaGarantia: '',
-      feFinCarencia: '',
-      feFinEspera: '',
-    },
-    {
-      infBeneficio: '1',
-      nuCobertura: '5',
-      beMaxInicial: '15000.0000',
-      moCobertura: '',
-      coInRestriccion: '1',
-      canServicio: '',
-      idProducto: '',
-      coTiCobertura: '5',
-      coSubTiCobertura: '273',
-      msgObs: 'HASTA S/5,000 (AMBULATORIO + HOSPITALARIO)',
-      msgConEspeciales: '',
-      coTiMoneda: '1',
-      coPagoFijo: '1.0000',
-      coCalServicio: '01',
-      canCalServicio: '',
-      coPagoVariable: '10.0000',
-      flagCaGarantia: '0',
-      deflagCaGarantia: '',
-      feFinCarencia: '',
-      feFinEspera: '',
-    },
-    {
-      infBeneficio: '1',
-      nuCobertura: '6',
-      beMaxInicial: '15000.0000',
-      moCobertura: '',
-      coInRestriccion: '0',
-      canServicio: '',
-      idProducto: '',
-      coTiCobertura: '6',
-      coSubTiCobertura: '004',
-      msgObs: '',
-      msgConEspeciales: '',
-      coTiMoneda: '1',
-      coPagoFijo: '0.0000',
-      coCalServicio: '01',
-      canCalServicio: '',
-      coPagoVariable: '100.0000',
-      flagCaGarantia: '0',
-      deflagCaGarantia: '',
-      feFinCarencia: '',
-      feFinEspera: '',
-    },
-    {
-      infBeneficio: '1',
-      nuCobertura: '6',
-      beMaxInicial: '15000.0000',
-      moCobertura: '',
-      coInRestriccion: '0',
-      canServicio: '',
-      idProducto: '',
-      coTiCobertura: '6',
-      coSubTiCobertura: '107',
-      msgObs: '',
-      msgConEspeciales: '',
-      coTiMoneda: '1',
-      coPagoFijo: '0.0000',
-      coCalServicio: '01',
-      canCalServicio: '',
-      coPagoVariable: '100.0000',
-      flagCaGarantia: '0',
-      deflagCaGarantia: '',
-      feFinCarencia: '',
-      feFinEspera: '',
-    },
-    {
-      infBeneficio: '1',
-      nuCobertura: '6',
-      beMaxInicial: '15000.0000',
-      moCobertura: '',
-      coInRestriccion: '1',
-      canServicio: '',
-      idProducto: '',
-      coTiCobertura: '6',
-      coSubTiCobertura: '100',
-      msgObs: 'SOLO SE CONSIDERA PRIORIDAD 1 Y 2',
-      msgConEspeciales: '',
-      coTiMoneda: '1',
-      coPagoFijo: '0.0000',
-      coCalServicio: '01',
-      canCalServicio: '',
-      coPagoVariable: '100.0000',
-      flagCaGarantia: '0',
-      deflagCaGarantia: '',
-      feFinCarencia: '',
-      feFinEspera: '',
-    },
-    {
-      infBeneficio: '1',
-      nuCobertura: '6',
-      beMaxInicial: '15000.0000',
-      moCobertura: '',
-      coInRestriccion: '0',
-      canServicio: '',
-      idProducto: '',
-      coTiCobertura: '6',
-      coSubTiCobertura: '003',
-      msgObs: '',
-      msgConEspeciales: '',
-      coTiMoneda: '1',
-      coPagoFijo: '0.0000',
-      coCalServicio: '01',
-      canCalServicio: '',
-      coPagoVariable: '100.0000',
-      flagCaGarantia: '0',
-      deflagCaGarantia: '',
-      feFinCarencia: '',
-      feFinEspera: '',
+      noTransaccion: '271_CON_COD',
+      idRemitente: '20028',
+      idReceptor: '00008786',
+      feTransaccion: '20251210',
+      hoTransaccion: '231645',
+      idCorrelativo: '000000001',
+      idTransaccion: '271',
+      tiFinalidad: '11',
+      caRemitente: '2',
+      userRemitente: '',
+      passRemitente: '',
+      feUpFoto: '',
+      caReceptor: '2',
+      nuRucReceptor: '20563648202',
+      caPaciente: '1',
+      apPaternoPaciente: 'SUAREZ',
+      noPaciente: 'JUAN CARLOS',
+      coAfPaciente: '13660',
+      apMaternoPaciente: 'LA TORRE',
+      coEsPaciente: '1',
+      tiDoPaciente: '1',
+      nuDoPaciente: '44960708',
+      nuIdenPaciente: '',
+      nuContratoPaciente: '216681',
+      nuPoliza: '21668',
+      nuCertificado: '',
+      coTiPoliza: '1',
+      coProducto: 'PS040',
+      deProducto: 'INTEGRAL PLUS INDIVIDUAL',
+      nuPlan: '21668A1',
+      tiPlanSalud: '3',
+      coMoneda: '1',
+      coParentesco: '5',
+      soBeneficio: '',
+      nuSoBeneficio: '',
+      feNacimiento: '19870724',
+      genero: '1',
+      esMarital: '1',
+      feIniVigencia: '20240507',
+      feFinVigencia: '20260507',
+      tiCaContratante: '1',
+      noPaContratante: 'LA TORRE',
+      noContratante: 'NORMA CECILIA',
+      noMaContratante: 'SILVA',
+      tiDoContratante: '1',
+      idReContratante: 'XX5',
+      coReContratante: '07411059',
+      caTitular: '1',
+      noPaTitular: 'LA TORRE',
+      noTitular: 'NORMA CECILIA',
+      coAfTitular: '24505',
+      noMaTitular: 'SILVA',
+      tiDoTitular: '1',
+      nuDoTitular: '07411059',
+      feInsTitular: '20240507',
+      nuControl: null,
+      nuControlST: null,
+      inConCod271Detalles: [
+        {
+          infBeneficio: '1',
+          nuCobertura: '4',
+          beMaxInicial: '15000.0000',
+          moCobertura: '',
+          coInRestriccion: '0',
+          canServicio: '',
+          idProducto: '',
+          coTiCobertura: '4',
+          coSubTiCobertura: '100',
+          msgObs: '',
+          msgConEspeciales: '',
+          coTiMoneda: '1',
+          coPagoFijo: '35.0000',
+          coCalServicio: '01',
+          canCalServicio: '',
+          coPagoVariable: '65.0000',
+          flagCaGarantia: '0',
+          deflagCaGarantia: '',
+          feFinCarencia: '',
+          feFinEspera: '',
+        },
+        {
+          infBeneficio: '1',
+          nuCobertura: '4',
+          beMaxInicial: '15000.0000',
+          moCobertura: '',
+          coInRestriccion: '1',
+          canServicio: '',
+          idProducto: '',
+          coTiCobertura: '4',
+          coSubTiCobertura: '266',
+          msgObs:
+            'LAS PREEXISTENCIAS TIPO A SOLO SON: HIPERTENSION, DIABETES, DISLIPIDEMIA, OTITIS, HIPERTIROIDISMO, HIPOTIROIDISMO, ASMA, GASTRITIS Y BRONQUITIS CRONICAS O DE ACUERDO A LO QUE LAS CONDICIONES MEDICAS INDICADAS EN SITEDS',
+          msgConEspeciales: '',
+          coTiMoneda: '1',
+          coPagoFijo: '35.0000',
+          coCalServicio: '01',
+          canCalServicio: '',
+          coPagoVariable: '50.0000',
+          flagCaGarantia: '0',
+          deflagCaGarantia: '',
+          feFinCarencia: '',
+          feFinEspera: '',
+        },
+        {
+          infBeneficio: '1',
+          nuCobertura: '4',
+          beMaxInicial: '15000.0000',
+          moCobertura: '',
+          coInRestriccion: '0',
+          canServicio: '',
+          idProducto: '',
+          coTiCobertura: '4',
+          coSubTiCobertura: '267',
+          msgObs: '',
+          msgConEspeciales: '',
+          coTiMoneda: '1',
+          coPagoFijo: '35.0000',
+          coCalServicio: '01',
+          canCalServicio: '',
+          coPagoVariable: '5.0000',
+          flagCaGarantia: '0',
+          deflagCaGarantia: '',
+          feFinCarencia: '',
+          feFinEspera: '',
+        },
+      ],
     },
   ],
 }
@@ -343,6 +289,7 @@ const enviarConsulta = async () => {
   responseData.value = null
   loading.value = true
   error.value = null
+  expandedDocIndex.value = null
   try {
     const data = await apiClient.post<ConsultaAsegCodResponse>(endpoint.value, formData)
     responseData.value = data
@@ -353,13 +300,19 @@ const enviarConsulta = async () => {
     loading.value = false
   }
 }
+
+const toggleDetalles = (index: number) => {
+  expandedDocIndex.value = expandedDocIndex.value === index ? null : index
+}
+
+const getDetalleList = (doc: ConsultaAsegCodDoc) => doc.inConCod271Detalles || []
 </script>
 
 <template>
   <section class="module-view">
     <h1>ConsultaAsegCod</h1>
     <p class="muted">
-      Consultar Asegurado por código
+      Consultar asegurado por codigo
       <!-- <code>{{ apiBaseUrl }}{{ endpoint }}</code>. La respuesta
       se muestra en el resumen y la tabla de beneficios. -->
     </p>
@@ -370,7 +323,7 @@ const enviarConsulta = async () => {
           <table class="data-table">
             <thead>
               <tr>
-                <th>Código</th>
+                <th>Codigo</th>
                 <th>Valor</th>
               </tr>
             </thead>
@@ -438,31 +391,68 @@ const enviarConsulta = async () => {
           <table class="data-table">
             <thead>
               <tr>
-                <th>Beneficio</th>
-                <th>Cobertura</th>
-                <th>Tipo/Subtipo</th>
-                <th>Pago fijo</th>
-                <th>Pago variable</th>
-                <th>Máx inicial</th>
-                <th>Restricción</th>
-                <th>Obs</th>
+                <th>Transaccion</th>
+                <th>Remitente</th>
+                <th>Receptor</th>
+                <th>Paciente</th>
+                <th>Documento</th>
+                <th>Plan</th>
+                <th>Detalles</th>
               </tr>
             </thead>
-            <tbody v-if="responseData?.detalles?.length && !error">
-              <tr v-for="(detalle, index) in responseData.detalles" :key="index">
-                <td>{{ detalle.infBeneficio }}</td>
-                <td>{{ detalle.nuCobertura }}</td>
-                <td>{{ detalle.coTiCobertura }} / {{ detalle.coSubTiCobertura }}</td>
-                <td>{{ detalle.coPagoFijo }}</td>
-                <td>{{ detalle.coPagoVariable }}</td>
-                <td>{{ detalle.beMaxInicial }}</td>
-                <td>{{ detalle.coInRestriccion }}</td>
-                <td>{{ detalle.msgObs || '—' }}</td>
-              </tr>
+            <tbody v-if="responseData?.resultCod?.length && !error">
+              <template v-for="(doc, index) in responseData.resultCod" :key="doc.idCorrelativo || index">
+                <tr class="clickable-row" @click="toggleDetalles(index)">
+                  <td>{{ doc.noTransaccion }}</td>
+                  <td>{{ doc.idRemitente }}</td>
+                  <td>{{ doc.idReceptor }}</td>
+                  <td>{{ doc.apPaternoPaciente }} {{ doc.apMaternoPaciente }} {{ doc.noPaciente }}</td>
+                  <td>{{ doc.tiDoPaciente }} - {{ doc.nuDoPaciente }}</td>
+                  <td>{{ doc.nuPlan }}</td>
+                  <td>{{ getDetalleList(doc).length }} registro(s)</td>
+                </tr>
+                <tr v-if="expandedDocIndex === index">
+                  <td colspan="7">
+                    <div class="table-wrapper response-table details-scroll">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>Beneficio</th>
+                            <th>Cobertura</th>
+                            <th>Tipo/Subtipo</th>
+                            <th>Pago fijo</th>
+                            <th>Pago variable</th>
+                            <th>Max inicial</th>
+                            <th>Restriccion</th>
+                            <th>Obs</th>
+                          </tr>
+                        </thead>
+                        <tbody v-if="getDetalleList(doc).length">
+                          <tr v-for="(detalle, detailIndex) in getDetalleList(doc)" :key="detailIndex">
+                            <td>{{ detalle.infBeneficio }}</td>
+                            <td>{{ detalle.nuCobertura }}</td>
+                            <td>{{ detalle.coTiCobertura }} / {{ detalle.coSubTiCobertura }}</td>
+                            <td>{{ detalle.coPagoFijo }}</td>
+                            <td>{{ detalle.coPagoVariable }}</td>
+                            <td>{{ detalle.beMaxInicial }}</td>
+                            <td>{{ detalle.coInRestriccion }}</td>
+                            <td>{{ detalle.msgObs || '-' }}</td>
+                          </tr>
+                        </tbody>
+                        <tbody v-else>
+                          <tr>
+                            <td colspan="8" class="muted">Sin detalles.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              </template>
             </tbody>
             <tbody v-else>
               <tr>
-                <td colspan="8" class="muted">Aún no hay detalles.</td>
+                <td colspan="7" class="muted">Aun no hay detalles.</td>
               </tr>
             </tbody>
           </table>
@@ -471,3 +461,14 @@ const enviarConsulta = async () => {
     </div>
   </section>
 </template>
+
+<style scoped>
+.clickable-row {
+  cursor: pointer;
+}
+
+.details-scroll {
+  max-height: 360px;
+  overflow-y: auto;
+}
+</style>

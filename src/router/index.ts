@@ -17,6 +17,7 @@ import FotoPage from '../pages/FotoPage.vue'
 import ConsultaxCartaGarantiaPage from '../pages/ConsultaxCartaGarantiaPage.vue'
 import ConsultaEntVinculadaPage from '../pages/ConsultaEntVinculadaPage.vue'
 import RegistroDecAccidentePage from '../pages/RegistroDecAccidentePage.vue'
+// import RegistroDecAccidentePage from '../pages/RegistroDecAccidentePage.vue'
 
 export type ModuleLink = {
   name: string
