@@ -1,81 +1,23 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { apiClient } from '../services/apiClient'
+import { reactive, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import {
+  type ConsultaAsegNomDoc,
+  type ConsultaAsegNomPayload,
+  useConsultaAsegNomStore,
+} from '../stores/consulta-aseg-nom.store'
+import { useUtilInputsStore } from '../stores/util-inputs.store'
 
-type ConsultaAsegNomPayload = {
-  coExcepcion: string
-  txNombre: string
-  coIafa: string
-  apatern: string
-  amatern: string
-  name: string
-  tiDoPaciente: string
-  nuDoPaciente: string
-}
-
-type ConsultaAsegNomDetalle = {
-  caPaciente: string
-  apPaternoPaciente: string
-  noPaciente: string
-  coAfPaciente: string
-  apMaternoPaciente: string
-  coEsPaciente: string
-  tiDoPaciente: string
-  nuDoPaciente: string
-  nuContratoPaciente: string
-  coProducto: string
-  coDescripcion: string
-  nuSCTR: string
-  coParentesco: string
-  nuPlan: string
-  feNacimiento: string
-  genero: string
-  esMarital: string
-  tiCaContratante: string
-  noPaContratante: string
-  noContratante: string
-  noMaContratante: string
-  tiDoContratante: string
-  idReContratante: string
-  coReContratante: string
-}
-
-type ConsultaAsegNomDoc = {
-  noTransaccion: string
-  idRemitente: string
-  idReceptor: string
-  feTransaccion: string
-  hoTransaccion: string
-  idCorrelativo: string
-  idTransaccion: string
-  tiFinalidad: string
-  caRemitente: string
-  caReceptor: string
-  nuRucReceptor: string | null
-  inConNom271Detalles: ConsultaAsegNomDetalle[]
-  nuControl: string | null
-  nuControlST: string | null
-  detalles?: ConsultaAsegNomDetalle[]
-}
-
-type ConsultaAsegNomResponse = {
-  coError: string
-  txNombre: string
-  coIafa: string
-  txRespuesta: string
-  resultNomDoc: ConsultaAsegNomDoc[]
-}
-
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085'
-const endpoint = ref('/consultarAseguradoxNom')
-const loading = ref(false)
-const error = ref<string | null>(null)
+const consultaAsegNomStore = useConsultaAsegNomStore()
+const utilInputsStore = useUtilInputsStore()
+const { response, loading, error } = storeToRefs(consultaAsegNomStore)
+const { consultaNomCoIafa } = storeToRefs(utilInputsStore)
 const expandedDocIndex = ref<number | null>(null)
 
 const formData = reactive<ConsultaAsegNomPayload>({
   coExcepcion: '0000',
   txNombre: '270_CON_ASE',
-  coIafa: '20004',
+  coIafa: consultaNomCoIafa.value,
   apatern: 'RAMOS',
   amatern: '',
   name: 'JUAN',
@@ -83,113 +25,39 @@ const formData = reactive<ConsultaAsegNomPayload>({
   nuDoPaciente: '',
 })
 
-const sampleResponse: ConsultaAsegNomResponse = {
-  coError: '0000',
-  txNombre: '271_CON_NOM',
-  coIafa: '20028',
-  txRespuesta:
-    'ISA*00*          *00*          *ZZ*20028          *ZZ*00008786       *251210*1941*|*00501*000000001*0*T*:~GS*HB*20028          *00008786       *20251210*194159  *022625147*X *00501       ~ST*271*89055126 *                                   ~BHT*0022*11~HL*1           *            *20*1~NM1*PR *2*                                                            *                                   *                         *          *          *PI*20028               *  *   *                                                            ~HL*2           *1           *21*1~NM1*1P *2*                                                            *                                   *                         *          *          *FI*20563648202         *  *   *                                                            ~HL*3           *2           *22*0~NM1*IL *1*SUAREZ                                                      *JUAN CARLOS                        *                         *          *          *MI*13660               *  *   *LA TORRE                                                    ~REF*ACC*1                                                                               *                                                                                ~REF*DD *1                                                                               *                                                                                *4A :44960708            :   :                    :   :                    ~REF*CT *21668A1                                                                         *                                                                                ~REF*PRT*PS040                                                                           *INTEGRAL PLUS INDIVIDUAL                                                        *ZZ :                    :   :                    :   :                    ~REF*ZZ *5                                                                               *                                                                                ~REF*18 *21668A1                                                                         *                                                                                ~DMG*D8 *19870724                           *2*1*                    *  *   ~NM1*P5 *1*LA TORRE                                                    *NORMA CECILIA                      *                         *          *          *  *                    *  *   *SILVA                                                       ~REF*DD *1                                                                               *                                                                                *XX5:07411059            :   :                    :   :                    ~SE*19        *89055126 ~GE*1     *022625147~IEA*1    *000000001~',
-  resultNomDoc: [
-    {
-      noTransaccion: '271_CON_NOM',
-      idRemitente: '20028',
-      idReceptor: '00008786',
-      feTransaccion: '20251210',
-      hoTransaccion: '194159',
-      idCorrelativo: '000000001',
-      idTransaccion: '271',
-      tiFinalidad: '11',
-      caRemitente: '2',
-      caReceptor: '2',
-      nuRucReceptor: '20563648202',
-      inConNom271Detalles: [
-        {
-          caPaciente: '1',
-          apPaternoPaciente: 'SUAREZ',
-          noPaciente: 'JUAN CARLOS',
-          coAfPaciente: '13660',
-          apMaternoPaciente: 'LA TORRE',
-          coEsPaciente: '1',
-          tiDoPaciente: '1',
-          nuDoPaciente: '44960708',
-          nuContratoPaciente: '21668A1',
-          coProducto: 'PS040',
-          coDescripcion: 'INTEGRAL PLUS INDIVIDUAL',
-          nuSCTR: '',
-          coParentesco: '5',
-          nuPlan: '21668A1',
-          feNacimiento: '19870724',
-          genero: '2',
-          esMarital: '1',
-          tiCaContratante: '1',
-          noPaContratante: 'LA TORRE',
-          noContratante: 'NORMA CECILIA',
-          noMaContratante: 'SILVA',
-          tiDoContratante: '1',
-          idReContratante: 'XX5',
-          coReContratante: '07411059',
-        },
-      ],
-      nuControl: null,
-      nuControlST: null,
-      detalles: [
-        {
-          caPaciente: '1',
-          apPaternoPaciente: 'SUAREZ',
-          noPaciente: 'JUAN CARLOS',
-          coAfPaciente: '13660',
-          apMaternoPaciente: 'LA TORRE',
-          coEsPaciente: '1',
-          tiDoPaciente: '1',
-          nuDoPaciente: '44960708',
-          nuContratoPaciente: '21668A1',
-          coProducto: 'PS040',
-          coDescripcion: 'INTEGRAL PLUS INDIVIDUAL',
-          nuSCTR: '',
-          coParentesco: '5',
-          nuPlan: '21668A1',
-          feNacimiento: '19870724',
-          genero: '2',
-          esMarital: '1',
-          tiCaContratante: '1',
-          noPaContratante: 'LA TORRE',
-          noContratante: 'NORMA CECILIA',
-          noMaContratante: 'SILVA',
-          tiDoContratante: '1',
-          idReContratante: 'XX5',
-          coReContratante: '07411059',
-        },
-      ],
-    },
-  ],
-}
-
-const responseData = ref<ConsultaAsegNomResponse | null>(sampleResponse)
-
-const enviarConsulta = async () => {
-  if (!formData.apatern.trim()) {
-    if (!formData.tiDoPaciente.trim() || !formData.nuDoPaciente.trim()) {
-      error.value = 'Si no se envia apatern, tiDoPaciente y nuDoPaciente son obligatorios.'
-      return
+watch(
+  () => formData.coIafa,
+  value => {
+    if (value !== consultaNomCoIafa.value) {
+      utilInputsStore.setConsultaNomCoIafa(value)
     }
   }
+)
 
-  responseData.value = null
-  loading.value = true
-  error.value = null
-  try {
-    const data = await apiClient.post<ConsultaAsegNomResponse>(endpoint.value, formData)
-    responseData.value = data
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Error desconocido'
-    responseData.value = null
-  } finally {
-    loading.value = false
+watch(
+  consultaNomCoIafa,
+  value => {
+    if (value !== formData.coIafa) {
+      formData.coIafa = value
+    }
   }
+)
+
+const enviarConsulta = async () => {
+  expandedDocIndex.value = null
+  await consultaAsegNomStore.consultarPorNombre({ ...formData })
 }
 
 const toggleDetalles = (index: number) => {
-  expandedDocIndex.value = expandedDocIndex.value === index ? null : index
+  const newIndex = expandedDocIndex.value === index ? null : index
+  expandedDocIndex.value = newIndex
+  if (newIndex !== null) {
+    consultaAsegNomStore.seleccionarPaciente(index)
+  }
+}
+
+const seleccionarDetalle = (docIndex: number, detalleIndex: number) => {
+  consultaAsegNomStore.seleccionarPaciente(docIndex, detalleIndex)
 }
 
 const getDetalleList = (doc: ConsultaAsegNomDoc) => {
@@ -200,11 +68,7 @@ const getDetalleList = (doc: ConsultaAsegNomDoc) => {
 <template>
   <section class="module-view">
     <h1>ConsultaAsegNom</h1>
-    <p class="muted">
-      Consulta los datos del asegurado por nombre o documento
-      <!-- <code>{{ apiBaseUrl }}{{ endpoint }}</code>. La respuesta se muestra en el resumen y la tabla
-      de detalles. -->
-    </p>
+    <p class="muted">Consulta los datos del asegurado por nombre o documento.</p>
 
     <div class="card-grid">
       <div class="api-box">
@@ -268,24 +132,24 @@ const getDetalleList = (doc: ConsultaAsegNomDoc) => {
           <p class="muted small">Se actualiza tras cada consulta</p>
         </div>
 
-        <div v-if="responseData && !error" class="summary-grid">
+        <div v-if="response && !error" class="summary-grid">
           <div class="summary-item">
             <p class="muted small">coError</p>
-            <p class="summary-value">{{ responseData.coError }}</p>
+            <p class="summary-value">{{ response.coError }}</p>
           </div>
           <div class="summary-item">
             <p class="muted small">txNombre</p>
-            <p class="summary-value">{{ responseData.txNombre }}</p>
+            <p class="summary-value">{{ response.txNombre }}</p>
           </div>
           <div class="summary-item">
             <p class="muted small">coIafa</p>
-            <p class="summary-value">{{ responseData.coIafa }}</p>
+            <p class="summary-value">{{ response.coIafa }}</p>
           </div>
         </div>
 
-        <div v-if="responseData && !error" class="output">
+        <div v-if="response && !error" class="output">
           <p class="muted small">txRespuesta (EDI crudo)</p>
-          <pre class="code-block">{{ responseData.txRespuesta }}</pre>
+          <pre class="code-block">{{ response.txRespuesta }}</pre>
         </div>
 
         <div class="table-wrapper response-table">
@@ -301,8 +165,8 @@ const getDetalleList = (doc: ConsultaAsegNomDoc) => {
                 <th>Detalles</th>
               </tr>
             </thead>
-            <tbody v-if="responseData?.resultNomDoc?.length && !error">
-              <template v-for="(doc, index) in responseData.resultNomDoc" :key="doc.idCorrelativo || index">
+            <tbody v-if="response?.resultNomDoc?.length && !error">
+              <template v-for="(doc, index) in response.resultNomDoc" :key="doc.idCorrelativo || index">
                 <tr class="clickable-row" @click="toggleDetalles(index)">
                   <td>{{ doc.noTransaccion }}</td>
                   <td>{{ doc.idRemitente }}</td>
@@ -330,7 +194,12 @@ const getDetalleList = (doc: ConsultaAsegNomDoc) => {
                           </tr>
                         </thead>
                         <tbody v-if="getDetalleList(doc).length">
-                          <tr v-for="(detalle, detailIndex) in getDetalleList(doc)" :key="detailIndex">
+                          <tr
+                            v-for="(detalle, detailIndex) in getDetalleList(doc)"
+                            :key="detailIndex"
+                            class="clickable-row"
+                            @click.stop="seleccionarDetalle(index, detailIndex)"
+                          >
                             <td>{{ detalle.caPaciente }}</td>
                             <td>
                               {{ detalle.apPaternoPaciente }} {{ detalle.apMaternoPaciente }}

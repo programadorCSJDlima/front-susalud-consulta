@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { apiClient } from '../services/apiClient'
+import { useUtilInputsStore } from '../stores/util-inputs.store'
+import { useConsultaAsegNomStore } from '../stores/consulta-aseg-nom.store'
 
 type ConsultaAsegCodPayload = {
   coExcepcion: string
@@ -117,34 +120,99 @@ type ConsultaAsegCodResponse = {
   resultCod?: ConsultaAsegCodDoc[]
 }
 
+type DocInfoEntry = {
+  label: string
+  value: string | null
+}
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085'
 const endpoint = ref('/consultarAseguradoxCod')
 const loading = ref(false)
 const error = ref<string | null>(null)
 const expandedDocIndex = ref<number | null>(null)
 
-const formData = reactive<ConsultaAsegCodPayload>({
+const utilInputsStore = useUtilInputsStore()
+const { consultaNomCoIafa } = storeToRefs(utilInputsStore)
+
+const consultaAsegNomStore = useConsultaAsegNomStore()
+const { datosPaciente } = storeToRefs(consultaAsegNomStore)
+
+const currentPaciente = datosPaciente.value
+
+const defaultFormValues: ConsultaAsegCodPayload = {
   coExcepcion: '0000',
   txNombre: '270_CON_ASE',
-  coIafa: '20028',
-  tipodocument: '1',
-  document: '44960708',
-  apPaterno: 'SUAREZ',
-  apMaterno: '',
-  nombres: 'JUAN CARLOS',
-  coAfiliado: '13660',
-  coProducto: 'PS040',
-  deProducto: 'INTEGRAL PLUS INDIVIDUAL',
-  coEspecialidad: '006',
-  coParentesco: '5',
-  nuPlan: '21668A1',
-  tiCaContratante: '1',
-  noPaContratante: 'LA TORRE',
-  noContratante: 'NORMA CECILIA',
-  noMaContratante: 'SILVA',
-  tiDoContratante: '1',
-  coReContratante: '07411059',
+  coIafa: consultaNomCoIafa.value,
+  tipodocument: currentPaciente?.tiDoPaciente ?? '1',
+  document: currentPaciente?.nuDoPaciente ?? '44960708',
+  apPaterno: currentPaciente?.apPaternoPaciente ?? 'SUAREZ',
+  apMaterno: currentPaciente?.apMaternoPaciente ?? '',
+  nombres: currentPaciente?.noPaciente ?? 'JUAN CARLOS',
+  coAfiliado: currentPaciente?.coAfPaciente ?? '13660',
+  coProducto: currentPaciente?.coProducto ?? 'PS040',
+  deProducto: currentPaciente?.coDescripcion ?? 'INTEGRAL PLUS INDIVIDUAL',
+  coEspecialidad: currentPaciente?.coEsPaciente ?? '006',
+  coParentesco: currentPaciente?.coParentesco ?? '5',
+  nuPlan: currentPaciente?.nuPlan ?? '21668A1',
+  tiCaContratante: currentPaciente?.tiCaContratante ?? '1',
+  noPaContratante: currentPaciente?.noPaContratante ?? 'LA TORRE',
+  noContratante: currentPaciente?.noContratante ?? 'NORMA CECILIA',
+  noMaContratante: currentPaciente?.noMaContratante ?? 'SILVA',
+  tiDoContratante: currentPaciente?.tiDoContratante ?? '1',
+  coReContratante: currentPaciente?.coReContratante ?? '07411059',
+}
+
+const formData = reactive<ConsultaAsegCodPayload>({ ...defaultFormValues })
+formData.coIafa = consultaNomCoIafa.value
+
+const populateFormFromPaciente = () => {
+  const paciente = datosPaciente.value
+  if (!paciente) {
+    return
+  }
+
+  formData.tipodocument = paciente.tiDoPaciente || formData.tipodocument
+  formData.document = paciente.nuDoPaciente || formData.document
+  formData.apPaterno = paciente.apPaternoPaciente || formData.apPaterno
+  formData.apMaterno = paciente.apMaternoPaciente || formData.apMaterno
+  formData.nombres = paciente.noPaciente || formData.nombres
+  formData.coAfiliado = paciente.coAfPaciente || formData.coAfiliado
+  formData.coProducto = paciente.coProducto || formData.coProducto
+  formData.deProducto = paciente.coDescripcion || formData.deProducto
+  formData.coEspecialidad = paciente.coEsPaciente || formData.coEspecialidad
+  formData.coParentesco = paciente.coParentesco || formData.coParentesco
+  formData.nuPlan = paciente.nuPlan || formData.nuPlan
+  formData.tiCaContratante = paciente.tiCaContratante || formData.tiCaContratante
+  formData.noPaContratante = paciente.noPaContratante || formData.noPaContratante
+  formData.noContratante = paciente.noContratante || formData.noContratante
+  formData.noMaContratante = paciente.noMaContratante || formData.noMaContratante
+  formData.tiDoContratante = paciente.tiDoContratante || formData.tiDoContratante
+  formData.coReContratante = paciente.coReContratante || formData.coReContratante
+}
+
+populateFormFromPaciente()
+
+watch(
+  () => formData.coIafa,
+  value => {
+    if (value !== consultaNomCoIafa.value) {
+      utilInputsStore.setConsultaNomCoIafa(value)
+    }
+  }
+)
+
+watch(datosPaciente, () => {
+  populateFormFromPaciente()
 })
+
+watch(
+  consultaNomCoIafa,
+  value => {
+    if (value !== formData.coIafa) {
+      formData.coIafa = value
+    }
+  }
+)
 
 const sampleResponse: ConsultaAsegCodResponse = {
   coError: '0000',
@@ -306,6 +374,72 @@ const toggleDetalles = (index: number) => {
 }
 
 const getDetalleList = (doc: ConsultaAsegCodDoc) => doc.inConCod271Detalles || []
+
+const docInfoFields: Array<{ key: keyof ConsultaAsegCodDoc; label: string }> = [
+  { key: 'noTransaccion', label: 'noTransaccion' },
+  { key: 'idRemitente', label: 'idRemitente' },
+  { key: 'idReceptor', label: 'idReceptor' },
+  { key: 'feTransaccion', label: 'feTransaccion' },
+  { key: 'hoTransaccion', label: 'hoTransaccion' },
+  { key: 'idCorrelativo', label: 'idCorrelativo' },
+  { key: 'idTransaccion', label: 'idTransaccion' },
+  { key: 'tiFinalidad', label: 'tiFinalidad' },
+  { key: 'caRemitente', label: 'caRemitente' },
+  { key: 'userRemitente', label: 'userRemitente' },
+  { key: 'passRemitente', label: 'passRemitente' },
+  { key: 'feUpFoto', label: 'feUpFoto' },
+  { key: 'caReceptor', label: 'caReceptor' },
+  { key: 'nuRucReceptor', label: 'nuRucReceptor' },
+  { key: 'caPaciente', label: 'caPaciente' },
+  { key: 'apPaternoPaciente', label: 'apPaternoPaciente' },
+  { key: 'apMaternoPaciente', label: 'apMaternoPaciente' },
+  { key: 'noPaciente', label: 'noPaciente' },
+  { key: 'coAfPaciente', label: 'coAfPaciente' },
+  { key: 'coEsPaciente', label: 'coEsPaciente' },
+  { key: 'tiDoPaciente', label: 'tiDoPaciente' },
+  { key: 'nuDoPaciente', label: 'nuDoPaciente' },
+  { key: 'nuIdenPaciente', label: 'nuIdenPaciente' },
+  { key: 'nuContratoPaciente', label: 'nuContratoPaciente' },
+  { key: 'nuPoliza', label: 'nuPoliza' },
+  { key: 'nuCertificado', label: 'nuCertificado' },
+  { key: 'coTiPoliza', label: 'coTiPoliza' },
+  { key: 'coProducto', label: 'coProducto' },
+  { key: 'deProducto', label: 'deProducto' },
+  { key: 'nuPlan', label: 'nuPlan' },
+  { key: 'tiPlanSalud', label: 'tiPlanSalud' },
+  { key: 'coMoneda', label: 'coMoneda' },
+  { key: 'coParentesco', label: 'coParentesco' },
+  { key: 'soBeneficio', label: 'soBeneficio' },
+  { key: 'nuSoBeneficio', label: 'nuSoBeneficio' },
+  { key: 'feNacimiento', label: 'feNacimiento' },
+  { key: 'genero', label: 'genero' },
+  { key: 'esMarital', label: 'esMarital' },
+  { key: 'feIniVigencia', label: 'feIniVigencia' },
+  { key: 'feFinVigencia', label: 'feFinVigencia' },
+  { key: 'tiCaContratante', label: 'tiCaContratante' },
+  { key: 'noPaContratante', label: 'noPaContratante' },
+  { key: 'noMaContratante', label: 'noMaContratante' },
+  { key: 'noContratante', label: 'noContratante' },
+  { key: 'tiDoContratante', label: 'tiDoContratante' },
+  { key: 'idReContratante', label: 'idReContratante' },
+  { key: 'coReContratante', label: 'coReContratante' },
+  { key: 'caTitular', label: 'caTitular' },
+  { key: 'noPaTitular', label: 'noPaTitular' },
+  { key: 'noMaTitular', label: 'noMaTitular' },
+  { key: 'noTitular', label: 'noTitular' },
+  { key: 'coAfTitular', label: 'coAfTitular' },
+  { key: 'tiDoTitular', label: 'tiDoTitular' },
+  { key: 'nuDoTitular', label: 'nuDoTitular' },
+  { key: 'feInsTitular', label: 'feInsTitular' },
+  { key: 'nuControl', label: 'nuControl' },
+  { key: 'nuControlST', label: 'nuControlST' },
+]
+
+const getDocInfoEntries = (doc: ConsultaAsegCodDoc): DocInfoEntry[] =>
+  docInfoFields.map(field => ({
+    label: field.label,
+    value: doc[field.key] ?? null,
+  }))
 </script>
 
 <template>
@@ -414,6 +548,28 @@ const getDetalleList = (doc: ConsultaAsegCodDoc) => doc.inConCod271Detalles || [
                 <tr v-if="expandedDocIndex === index">
                   <td colspan="7">
                     <div class="table-wrapper response-table details-scroll">
+                      <p class="muted small">Datos completos del documento</p>
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>Campo</th>
+                            <th>Valor</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="entry in getDocInfoEntries(doc)" :key="entry.label">
+                            <td>{{ entry.label }}</td>
+                            <td>{{ entry.value ?? '-' }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+                <tr v-if="expandedDocIndex === index">
+                  <td colspan="7">
+                    <div class="table-wrapper response-table details-scroll">
+                      <p class="muted small">Beneficios (inConCod271Detalles)</p>
                       <table class="data-table">
                         <thead>
                           <tr>

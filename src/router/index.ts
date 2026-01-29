@@ -17,6 +17,7 @@ import FotoPage from '../pages/FotoPage.vue'
 import ConsultaxCartaGarantiaPage from '../pages/ConsultaxCartaGarantiaPage.vue'
 import ConsultaEntVinculadaPage from '../pages/ConsultaEntVinculadaPage.vue'
 import RegistroDecAccidentePage from '../pages/RegistroDecAccidentePage.vue'
+import LogAcreInsertPage from '../pages/LogAcreInsertPage.vue'
 // import RegistroDecAccidentePage from '../pages/RegistroDecAccidentePage.vue'
 
 export type ModuleLink = {
@@ -85,6 +86,12 @@ const moduleRouteConfigs: ModuleRouteConfig[] = [
     component: NumAutorizacionPage,
   },
   {
+    name: 'LogAcreInsert',
+    label: 'LogAcreInsert',
+    path: '/log-acre-insert',
+    component: LogAcreInsertPage,
+  },
+  {
     name: 'Foto',
     label: 'Foto',
     path: '/foto',
@@ -96,12 +103,12 @@ const moduleRouteConfigs: ModuleRouteConfig[] = [
     path: '/consultax-carta-garantia',
     component: ConsultaxCartaGarantiaPage,
   },
-  {
-    name: 'ConsultaEntVinculada',
-    label: 'ConsultaEntVinculada',
-    path: '/consulta-ent-vinculada',
-    component: ConsultaEntVinculadaPage,
-  },
+  // {
+  //   name: 'ConsultaEntVinculada',
+  //   label: 'ConsultaEntVinculada',
+  //   path: '/consulta-ent-vinculada',
+  //   component: ConsultaEntVinculadaPage,
+  // },
   {
     name: 'RegistroDecAccidente',
     label: 'RegistroDecAccidente',

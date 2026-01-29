@@ -121,10 +121,10 @@ const enviarConsulta = async () => {
 <template>
   <section class="module-view">
     <h1>ConsultaEntVinculada</h1>
-    <p class="muted">
+    <!-- <p class="muted">
       Consulta la entidad vinculada. El formulario envia los datos al endpoint
       <code>{{ apiBaseUrl }}{{ endpoint }}</code>.
-    </p>
+    </p> -->
 
     <div class="card-grid">
       <div class="api-box">

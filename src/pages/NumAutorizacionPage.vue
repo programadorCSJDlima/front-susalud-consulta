@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { apiClient } from '../services/apiClient'
+import { useConsultaAsegNomStore } from '../stores/consulta-aseg-nom.store'
+import { useNumAutorizacionStore } from '../stores/num-autorizacion.store'
+import { useLogAcreInsertStore } from '../stores/log-acre-insert.store'
 
 type NumAutorizacionPayload = {
   coExcepcion: string
@@ -126,6 +130,7 @@ type NumAutorizacionResponse = {
   coError: string
   txNombre: string
   coIafa: string
+  txtConsulta?: string
   txRespuesta: string
   resAut?: NumAutorizacionDoc[]
 }
@@ -134,6 +139,11 @@ const endpoint = ref('/getNumAutorizacion')
 const loading = ref(false)
 const error = ref<string | null>(null)
 const expandedDocIndex = ref<number | null>(null)
+
+const consultaAsegNomStore = useConsultaAsegNomStore()
+const numAutorizacionStore = useNumAutorizacionStore()
+const logAcreInsertStore = useLogAcreInsertStore()
+const { datosPaciente } = storeToRefs(consultaAsegNomStore)
 
 const formData = reactive<NumAutorizacionPayload>({
   coExcepcion: '0000',
@@ -239,10 +249,73 @@ const formData = reactive<NumAutorizacionPayload>({
   coPaisRegafi: '',
 })
 
+watch(
+  datosPaciente,
+  (paciente) => {
+    if (!paciente) return
+
+    if (paciente.feNacimiento) {
+      formData.feNaRegafi = paciente.feNacimiento
+      formData.feNacimiento = paciente.feNacimiento
+    }
+    if (paciente.nuDoPaciente) {
+      formData.nuDoRegafi = paciente.nuDoPaciente
+      formData.nuDoPaciente = paciente.nuDoPaciente
+    }
+    if (paciente.tiDoPaciente) {
+      formData.tiDoRegafi = paciente.tiDoPaciente
+      formData.tiDoPaciente = paciente.tiDoPaciente
+    }
+    if (paciente.coAfPaciente) {
+      formData.coAfRegafi = paciente.coAfPaciente
+      formData.coAfPaciente = paciente.coAfPaciente
+    }
+    if (paciente.noPaciente) {
+      formData.noRegafi = paciente.noPaciente
+      formData.noPaciente = paciente.noPaciente
+    }
+    if (paciente.apPaternoPaciente) {
+      formData.noPaRegafi = paciente.apPaternoPaciente
+      formData.apPaternoPaciente = paciente.apPaternoPaciente
+    }
+    if (paciente.idReContratante) {
+      formData.idReRegafi = paciente.idReContratante
+      formData.idReContratante = paciente.idReContratante
+    }
+    if (paciente.coReContratante) {
+      formData.coReContratante = paciente.coReContratante
+    }
+    if (paciente.tiDoContratante) {
+      formData.tiDoContratante = paciente.tiDoContratante
+    }
+    if (paciente.noMaContratante) {
+      formData.noMaContratante = paciente.noMaContratante
+    }
+    if (paciente.noContratante) {
+      formData.noContratante = paciente.noContratante
+    }
+    if (paciente.noPaContratante) {
+      formData.noPaContratante = paciente.noPaContratante
+    }
+    if (paciente.coDescripcion) {
+      formData.deProducto = paciente.coDescripcion
+    }
+    if (paciente.coProducto) {
+      formData.coProducto = paciente.coProducto
+    }
+    if (paciente.apMaternoPaciente) {
+      formData.apMaternoPaciente = paciente.apMaternoPaciente
+    }
+  },
+  { immediate: true }
+)
+
 const sampleResponse: NumAutorizacionResponse = {
   coError: '0000',
   txNombre: '997_RES_AUT',
   coIafa: '20028',
+  txtConsulta:
+    'ISA*00*          *00*          *ZZ*20028          *ZZ*00008786       *251210*2316*|*00501*000000001*0*T*:~GS*FA*20028 ... (trama de consulta de ejemplo)',
   txRespuesta:
     'ISA*00*          *00*          *ZZ*20028          *ZZ*00008786       *251210*2316*|*00501*000000001*0*T*:~GS*FA*20028          *00008786       *20251210*231628  *046960512*X *00501       ~ST*997*16833427 *                                   ~AK1*PO*46960512 *000000360   ~AK2*997*16833427 *                                   ~AK5*A*001~AK9*A*1*1     *1     ~SE*7         *16833427 ~GE*1     *046960512~IEA*1    *000000001~',
   resAut: [
@@ -271,12 +344,17 @@ const enviarConsulta = async () => {
   loading.value = true
   error.value = null
   expandedDocIndex.value = null
+  numAutorizacionStore.reset()
+  logAcreInsertStore.updateFromPaciente(datosPaciente.value || null)
   try {
     const data = await apiClient.post<NumAutorizacionResponse>(endpoint.value, formData)
     responseData.value = data
+    numAutorizacionStore.setResAut(data.resAut)
+    logAcreInsertStore.updateFromResAut(data.resAut)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Error desconocido'
     responseData.value = null
+    numAutorizacionStore.reset()
   } finally {
     loading.value = false
   }
@@ -424,6 +502,11 @@ const toggleDetalles = (index: number) => {
         <div class="box-header">
           <p class="muted small">Respuesta</p>
           <p class="muted small">Se actualiza tras cada consulta</p>
+        </div>
+
+        <div v-if="responseData?.txtConsulta && !error" class="output">
+          <p class="muted small">txtConsulta (EDI enviado)</p>
+          <pre class="code-block">{{ responseData.txtConsulta }}</pre>
         </div>
 
         <div v-if="responseData && !error" class="summary-grid">

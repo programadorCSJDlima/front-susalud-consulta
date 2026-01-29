@@ -115,11 +115,6 @@ const enviarConsulta = async () => {
 <template>
   <section class="module-view">
     <h1>ConsultaDeriva</h1>
-    <p class="muted">
-      Envia los datos al endpoint <code>{{ apiBaseUrl }}{{ endpoint }}</code>. Si la llamada es
-      satisfactoria (200), se mostrará el EDI y los detalles; si falla, se muestra el error y se
-      oculta la tabla.
-    </p>
 
     <div class="card-grid">
       <div class="api-box">
