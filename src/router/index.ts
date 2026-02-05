@@ -103,12 +103,12 @@ const moduleRouteConfigs: ModuleRouteConfig[] = [
     path: '/consultax-carta-garantia',
     component: ConsultaxCartaGarantiaPage,
   },
-  // {
-  //   name: 'ConsultaEntVinculada',
-  //   label: 'ConsultaEntVinculada',
-  //   path: '/consulta-ent-vinculada',
-  //   component: ConsultaEntVinculadaPage,
-  // },
+  {
+    name: 'ConsultaEntVinculada',
+    label: 'ConsultaEntVinculada',
+    path: '/consulta-ent-vinculada',
+    component: ConsultaEntVinculadaPage,
+  },
   {
     name: 'RegistroDecAccidente',
     label: 'RegistroDecAccidente',

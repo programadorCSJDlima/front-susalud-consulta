@@ -1,134 +1,21 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { apiClient } from '../services/apiClient'
+import {
+  useConsultaAsegCodStore,
+  type ConsultaAsegCodDoc,
+  type ConsultaAsegCodPayload,
+} from '../stores/consulta-aseg-cod.store'
 import { useUtilInputsStore } from '../stores/util-inputs.store'
 import { useConsultaAsegNomStore } from '../stores/consulta-aseg-nom.store'
-
-type ConsultaAsegCodPayload = {
-  coExcepcion: string
-  txNombre: string
-  coIafa: string
-  tipodocument: string
-  document: string
-  apPaterno: string
-  apMaterno: string
-  nombres: string
-  coAfiliado: string
-  coProducto: string
-  deProducto: string
-  coEspecialidad: string
-  coParentesco: string
-  nuPlan: string
-  tiCaContratante: string
-  noPaContratante: string
-  noContratante: string
-  noMaContratante: string
-  tiDoContratante: string
-  coReContratante: string
-}
-
-type ConsultaAsegCodBeneficio = {
-  infBeneficio: string
-  nuCobertura: string
-  beMaxInicial: string
-  moCobertura: string
-  coInRestriccion: string
-  canServicio: string
-  idProducto: string
-  coTiCobertura: string
-  coSubTiCobertura: string
-  msgObs: string
-  msgConEspeciales: string
-  coTiMoneda: string
-  coPagoFijo: string
-  coCalServicio: string
-  canCalServicio: string
-  coPagoVariable: string
-  flagCaGarantia: string
-  deflagCaGarantia: string
-  feFinCarencia: string
-  feFinEspera: string
-}
-
-type ConsultaAsegCodDoc = {
-  noTransaccion: string
-  idRemitente: string
-  idReceptor: string
-  feTransaccion: string
-  hoTransaccion: string
-  idCorrelativo: string
-  idTransaccion: string
-  tiFinalidad: string
-  caRemitente: string
-  userRemitente: string
-  passRemitente: string
-  feUpFoto: string
-  caReceptor: string
-  nuRucReceptor: string
-  caPaciente: string
-  apPaternoPaciente: string
-  noPaciente: string
-  coAfPaciente: string
-  apMaternoPaciente: string
-  coEsPaciente: string
-  tiDoPaciente: string
-  nuDoPaciente: string
-  nuIdenPaciente: string
-  nuContratoPaciente: string
-  nuPoliza: string
-  nuCertificado: string
-  coTiPoliza: string
-  coProducto: string
-  deProducto: string
-  nuPlan: string
-  tiPlanSalud: string
-  coMoneda: string
-  coParentesco: string
-  soBeneficio: string
-  nuSoBeneficio: string
-  feNacimiento: string
-  genero: string
-  esMarital: string
-  feIniVigencia: string
-  feFinVigencia: string
-  tiCaContratante: string
-  noPaContratante: string
-  noContratante: string
-  noMaContratante: string
-  tiDoContratante: string
-  idReContratante: string
-  coReContratante: string
-  caTitular: string
-  noPaTitular: string
-  noTitular: string
-  coAfTitular: string
-  noMaTitular: string
-  tiDoTitular: string
-  nuDoTitular: string
-  feInsTitular: string
-  nuControl: string | null
-  nuControlST: string | null
-  inConCod271Detalles: ConsultaAsegCodBeneficio[]
-}
-
-type ConsultaAsegCodResponse = {
-  coError: string
-  txNombre: string
-  coIafa: string
-  txRespuesta: string
-  resultCod?: ConsultaAsegCodDoc[]
-}
 
 type DocInfoEntry = {
   label: string
   value: string | null
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085'
-const endpoint = ref('/consultarAseguradoxCod')
-const loading = ref(false)
-const error = ref<string | null>(null)
+const consultaAsegCodStore = useConsultaAsegCodStore()
+const { response, loading, error } = storeToRefs(consultaAsegCodStore)
 const expandedDocIndex = ref<number | null>(null)
 
 const utilInputsStore = useUtilInputsStore()
@@ -143,23 +30,23 @@ const defaultFormValues: ConsultaAsegCodPayload = {
   coExcepcion: '0000',
   txNombre: '270_CON_ASE',
   coIafa: consultaNomCoIafa.value,
-  tipodocument: currentPaciente?.tiDoPaciente ?? '1',
-  document: currentPaciente?.nuDoPaciente ?? '44960708',
-  apPaterno: currentPaciente?.apPaternoPaciente ?? 'SUAREZ',
+  tipodocument: currentPaciente?.tiDoPaciente ?? '',
+  document: currentPaciente?.nuDoPaciente ?? '',
+  apPaterno: currentPaciente?.apPaternoPaciente ?? '',
   apMaterno: currentPaciente?.apMaternoPaciente ?? '',
-  nombres: currentPaciente?.noPaciente ?? 'JUAN CARLOS',
-  coAfiliado: currentPaciente?.coAfPaciente ?? '13660',
-  coProducto: currentPaciente?.coProducto ?? 'PS040',
-  deProducto: currentPaciente?.coDescripcion ?? 'INTEGRAL PLUS INDIVIDUAL',
-  coEspecialidad: currentPaciente?.coEsPaciente ?? '006',
-  coParentesco: currentPaciente?.coParentesco ?? '5',
-  nuPlan: currentPaciente?.nuPlan ?? '21668A1',
-  tiCaContratante: currentPaciente?.tiCaContratante ?? '1',
-  noPaContratante: currentPaciente?.noPaContratante ?? 'LA TORRE',
-  noContratante: currentPaciente?.noContratante ?? 'NORMA CECILIA',
-  noMaContratante: currentPaciente?.noMaContratante ?? 'SILVA',
-  tiDoContratante: currentPaciente?.tiDoContratante ?? '1',
-  coReContratante: currentPaciente?.coReContratante ?? '07411059',
+  nombres: currentPaciente?.noPaciente ?? '',
+  coAfiliado: currentPaciente?.coAfPaciente ?? '',
+  coProducto: currentPaciente?.coProducto ?? '',
+  deProducto: currentPaciente?.coDescripcion ?? '',
+  coEspecialidad: currentPaciente?.coEsPaciente ?? '',
+  coParentesco: currentPaciente?.coParentesco ?? '',
+  nuPlan: currentPaciente?.nuPlan ?? '',
+  tiCaContratante: currentPaciente?.tiCaContratante ?? '',
+  noPaContratante: currentPaciente?.noPaContratante ?? '',
+  noContratante: currentPaciente?.noContratante ?? '',
+  noMaContratante: currentPaciente?.noMaContratante ?? '',
+  tiDoContratante: currentPaciente?.tiDoContratante ?? '',
+  coReContratante: currentPaciente?.coReContratante ?? '',
 }
 
 const formData = reactive<ConsultaAsegCodPayload>({ ...defaultFormValues })
@@ -182,7 +69,7 @@ const populateFormFromPaciente = () => {
   formData.coEspecialidad = paciente.coEsPaciente || formData.coEspecialidad
   formData.coParentesco = paciente.coParentesco || formData.coParentesco
   formData.nuPlan = paciente.nuPlan || formData.nuPlan
-  formData.tiCaContratante = paciente.tiCaContratante || formData.tiCaContratante
+  formData.tiCaContratante = paciente.tiCaContratante || '1'
   formData.noPaContratante = paciente.noPaContratante || formData.noPaContratante
   formData.noContratante = paciente.noContratante || formData.noContratante
   formData.noMaContratante = paciente.noMaContratante || formData.noMaContratante
@@ -214,159 +101,13 @@ watch(
   }
 )
 
-const sampleResponse: ConsultaAsegCodResponse = {
-  coError: '0000',
-  txNombre: '271_CON_COD',
-  coIafa: '20028',
-  txRespuesta: 'ISA*00*          *00*          *ZZ*20028 ... (truncado de ejemplo EDI)',
-  resultCod: [
-    {
-      noTransaccion: '271_CON_COD',
-      idRemitente: '20028',
-      idReceptor: '00008786',
-      feTransaccion: '20251210',
-      hoTransaccion: '231645',
-      idCorrelativo: '000000001',
-      idTransaccion: '271',
-      tiFinalidad: '11',
-      caRemitente: '2',
-      userRemitente: '',
-      passRemitente: '',
-      feUpFoto: '',
-      caReceptor: '2',
-      nuRucReceptor: '20563648202',
-      caPaciente: '1',
-      apPaternoPaciente: 'SUAREZ',
-      noPaciente: 'JUAN CARLOS',
-      coAfPaciente: '13660',
-      apMaternoPaciente: 'LA TORRE',
-      coEsPaciente: '1',
-      tiDoPaciente: '1',
-      nuDoPaciente: '44960708',
-      nuIdenPaciente: '',
-      nuContratoPaciente: '216681',
-      nuPoliza: '21668',
-      nuCertificado: '',
-      coTiPoliza: '1',
-      coProducto: 'PS040',
-      deProducto: 'INTEGRAL PLUS INDIVIDUAL',
-      nuPlan: '21668A1',
-      tiPlanSalud: '3',
-      coMoneda: '1',
-      coParentesco: '5',
-      soBeneficio: '',
-      nuSoBeneficio: '',
-      feNacimiento: '19870724',
-      genero: '1',
-      esMarital: '1',
-      feIniVigencia: '20240507',
-      feFinVigencia: '20260507',
-      tiCaContratante: '1',
-      noPaContratante: 'LA TORRE',
-      noContratante: 'NORMA CECILIA',
-      noMaContratante: 'SILVA',
-      tiDoContratante: '1',
-      idReContratante: 'XX5',
-      coReContratante: '07411059',
-      caTitular: '1',
-      noPaTitular: 'LA TORRE',
-      noTitular: 'NORMA CECILIA',
-      coAfTitular: '24505',
-      noMaTitular: 'SILVA',
-      tiDoTitular: '1',
-      nuDoTitular: '07411059',
-      feInsTitular: '20240507',
-      nuControl: null,
-      nuControlST: null,
-      inConCod271Detalles: [
-        {
-          infBeneficio: '1',
-          nuCobertura: '4',
-          beMaxInicial: '15000.0000',
-          moCobertura: '',
-          coInRestriccion: '0',
-          canServicio: '',
-          idProducto: '',
-          coTiCobertura: '4',
-          coSubTiCobertura: '100',
-          msgObs: '',
-          msgConEspeciales: '',
-          coTiMoneda: '1',
-          coPagoFijo: '35.0000',
-          coCalServicio: '01',
-          canCalServicio: '',
-          coPagoVariable: '65.0000',
-          flagCaGarantia: '0',
-          deflagCaGarantia: '',
-          feFinCarencia: '',
-          feFinEspera: '',
-        },
-        {
-          infBeneficio: '1',
-          nuCobertura: '4',
-          beMaxInicial: '15000.0000',
-          moCobertura: '',
-          coInRestriccion: '1',
-          canServicio: '',
-          idProducto: '',
-          coTiCobertura: '4',
-          coSubTiCobertura: '266',
-          msgObs:
-            'LAS PREEXISTENCIAS TIPO A SOLO SON: HIPERTENSION, DIABETES, DISLIPIDEMIA, OTITIS, HIPERTIROIDISMO, HIPOTIROIDISMO, ASMA, GASTRITIS Y BRONQUITIS CRONICAS O DE ACUERDO A LO QUE LAS CONDICIONES MEDICAS INDICADAS EN SITEDS',
-          msgConEspeciales: '',
-          coTiMoneda: '1',
-          coPagoFijo: '35.0000',
-          coCalServicio: '01',
-          canCalServicio: '',
-          coPagoVariable: '50.0000',
-          flagCaGarantia: '0',
-          deflagCaGarantia: '',
-          feFinCarencia: '',
-          feFinEspera: '',
-        },
-        {
-          infBeneficio: '1',
-          nuCobertura: '4',
-          beMaxInicial: '15000.0000',
-          moCobertura: '',
-          coInRestriccion: '0',
-          canServicio: '',
-          idProducto: '',
-          coTiCobertura: '4',
-          coSubTiCobertura: '267',
-          msgObs: '',
-          msgConEspeciales: '',
-          coTiMoneda: '1',
-          coPagoFijo: '35.0000',
-          coCalServicio: '01',
-          canCalServicio: '',
-          coPagoVariable: '5.0000',
-          flagCaGarantia: '0',
-          deflagCaGarantia: '',
-          feFinCarencia: '',
-          feFinEspera: '',
-        },
-      ],
-    },
-  ],
-}
-
-const responseData = ref<ConsultaAsegCodResponse | null>(sampleResponse)
 
 const enviarConsulta = async () => {
-  responseData.value = null
-  loading.value = true
-  error.value = null
-  expandedDocIndex.value = null
-  try {
-    const data = await apiClient.post<ConsultaAsegCodResponse>(endpoint.value, formData)
-    responseData.value = data
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Error desconocido'
-    responseData.value = null
-  } finally {
-    loading.value = false
+  if (!formData.tiCaContratante) {
+    formData.tiCaContratante = '1'
   }
+  expandedDocIndex.value = null
+  await consultaAsegCodStore.consultarPorCodigo({ ...formData })
 }
 
 const toggleDetalles = (index: number) => {
@@ -476,7 +217,15 @@ const getDocInfoEntries = (doc: ConsultaAsegCodDoc): DocInfoEntry[] =>
               <tr><td>coEspecialidad</td><td><input v-model="formData.coEspecialidad" class="input" /></td></tr>
               <tr><td>coParentesco</td><td><input v-model="formData.coParentesco" class="input" /></td></tr>
               <tr><td>nuPlan</td><td><input v-model="formData.nuPlan" class="input" /></td></tr>
-              <tr><td>tiCaContratante</td><td><input v-model="formData.tiCaContratante" class="input" /></td></tr>
+              <tr>
+                <td>tiCaContratante</td>
+                <td>
+                  <select v-model="formData.tiCaContratante" class="input">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                  </select>
+                </td>
+              </tr>
               <tr><td>noPaContratante</td><td><input v-model="formData.noPaContratante" class="input" /></td></tr>
               <tr><td>noContratante</td><td><input v-model="formData.noContratante" class="input" /></td></tr>
               <tr><td>noMaContratante</td><td><input v-model="formData.noMaContratante" class="input" /></td></tr>
@@ -501,24 +250,24 @@ const getDocInfoEntries = (doc: ConsultaAsegCodDoc): DocInfoEntry[] =>
           <p class="muted small">Se actualiza tras cada consulta</p>
         </div>
 
-        <div v-if="responseData && !error" class="summary-grid">
+        <div v-if="response && !error" class="summary-grid">
           <div class="summary-item">
             <p class="muted small">coError</p>
-            <p class="summary-value">{{ responseData.coError }}</p>
+            <p class="summary-value">{{ response.coError }}</p>
           </div>
           <div class="summary-item">
             <p class="muted small">txNombre</p>
-            <p class="summary-value">{{ responseData.txNombre }}</p>
+            <p class="summary-value">{{ response.txNombre }}</p>
           </div>
           <div class="summary-item">
             <p class="muted small">coIafa</p>
-            <p class="summary-value">{{ responseData.coIafa }}</p>
+            <p class="summary-value">{{ response.coIafa }}</p>
           </div>
         </div>
 
-        <div v-if="responseData && !error" class="output">
+        <div v-if="response && !error" class="output">
           <p class="muted small">txRespuesta (EDI crudo)</p>
-          <pre class="code-block">{{ responseData.txRespuesta }}</pre>
+          <pre class="code-block">{{ response.txRespuesta }}</pre>
         </div>
 
         <div class="table-wrapper response-table">
@@ -534,9 +283,13 @@ const getDocInfoEntries = (doc: ConsultaAsegCodDoc): DocInfoEntry[] =>
                 <th>Detalles</th>
               </tr>
             </thead>
-            <tbody v-if="responseData?.resultCod?.length && !error">
-              <template v-for="(doc, index) in responseData.resultCod" :key="doc.idCorrelativo || index">
-                <tr class="clickable-row" @click="toggleDetalles(index)">
+            <tbody v-if="response?.resultCod?.length && !error">
+              <template v-for="(doc, index) in response.resultCod" :key="doc.idCorrelativo || index">
+                <tr
+                  class="clickable-row"
+                  :class="{ 'is-selected': expandedDocIndex === index }"
+                  @click="toggleDetalles(index)"
+                >
                   <td>{{ doc.noTransaccion }}</td>
                   <td>{{ doc.idRemitente }}</td>
                   <td>{{ doc.idReceptor }}</td>
@@ -621,6 +374,12 @@ const getDocInfoEntries = (doc: ConsultaAsegCodDoc): DocInfoEntry[] =>
 <style scoped>
 .clickable-row {
   cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover,
+.clickable-row.is-selected {
+  background-color: var(--panel-strong);
 }
 
 .details-scroll {

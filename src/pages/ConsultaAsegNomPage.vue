@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
+import { useToast } from 'vue-toast-notification'
 import { storeToRefs } from 'pinia'
 import {
   type ConsultaAsegNomDoc,
@@ -8,6 +9,7 @@ import {
 } from '../stores/consulta-aseg-nom.store'
 import { useUtilInputsStore } from '../stores/util-inputs.store'
 
+const toast = useToast()
 const consultaAsegNomStore = useConsultaAsegNomStore()
 const utilInputsStore = useUtilInputsStore()
 const { response, loading, error } = storeToRefs(consultaAsegNomStore)
@@ -18,9 +20,9 @@ const formData = reactive<ConsultaAsegNomPayload>({
   coExcepcion: '0000',
   txNombre: '270_CON_ASE',
   coIafa: consultaNomCoIafa.value,
-  apatern: 'RAMOS',
+  apatern: '',
   amatern: '',
-  name: 'JUAN',
+  name: '',
   tiDoPaciente: '',
   nuDoPaciente: '',
 })
@@ -31,6 +33,25 @@ watch(
     if (value !== consultaNomCoIafa.value) {
       utilInputsStore.setConsultaNomCoIafa(value)
     }
+  }
+)
+
+watch(
+  () => formData.apatern,
+  value => {
+    if (value) formData.apatern = value.toUpperCase()
+  }
+)
+watch(
+  () => formData.amatern,
+  value => {
+    if (value) formData.amatern = value.toUpperCase()
+  }
+)
+watch(
+  () => formData.name,
+  value => {
+    if (value) formData.name = value.toUpperCase()
   }
 )
 
@@ -56,8 +77,33 @@ const toggleDetalles = (index: number) => {
   }
 }
 
+const estadoLabels: Record<string, string> = {
+  '1': 'VIGENTE',
+  '2': 'SIN COBERTURA',
+  '6': 'INACTIVO',
+  '7': 'SUSPENDIDO',
+  '8': 'LATENTE',
+  '9': 'RENOVADA',
+}
+
 const seleccionarDetalle = (docIndex: number, detalleIndex: number) => {
   consultaAsegNomStore.seleccionarPaciente(docIndex, detalleIndex)
+  const doc = response.value?.resultNomDoc?.[docIndex]
+  const detalle = getDetalleList(doc || ({} as ConsultaAsegNomDoc))[detalleIndex]
+  const estado = detalle?.coEsPaciente
+  if (!estado) {
+    return
+  }
+  const label = estadoLabels[estado] || 'DESCONOCIDO'
+  const nombre = detalle
+    ? `${detalle.noPaciente || ''}`.trim() || `${detalle.apPaternoPaciente || ''} ${detalle.apMaternoPaciente || ''}`.trim()
+    : 'Desconocido'
+  const mensaje = `Asegurado: ${nombre || 'N/D'} • Estado: ${label}`
+  if (estado === '1') {
+    toast.success(mensaje)
+  } else {
+    toast.error(mensaje)
+  }
 }
 
 const getDetalleList = (doc: ConsultaAsegNomDoc) => {
@@ -178,7 +224,7 @@ const getDetalleList = (doc: ConsultaAsegNomDoc) => {
                 </tr>
                 <tr v-if="expandedDocIndex === index">
                   <td colspan="7">
-                    <div class="table-wrapper response-table">
+                    <div class="table-wrapper response-table details-scroll">
                       <table class="data-table">
                         <thead>
                           <tr>
@@ -190,6 +236,7 @@ const getDetalleList = (doc: ConsultaAsegNomDoc) => {
                             <th>Descripcion</th>
                             <th>Nacimiento</th>
                             <th>Parentesco</th>
+                            <th>Estado</th>
                             <th>Contratante</th>
                           </tr>
                         </thead>
@@ -198,7 +245,7 @@ const getDetalleList = (doc: ConsultaAsegNomDoc) => {
                             v-for="(detalle, detailIndex) in getDetalleList(doc)"
                             :key="detailIndex"
                             class="clickable-row"
-                            @click.stop="seleccionarDetalle(index, detailIndex)"
+                            @dblclick.stop="seleccionarDetalle(index, detailIndex)"
                           >
                             <td>{{ detalle.caPaciente }}</td>
                             <td>
@@ -211,6 +258,7 @@ const getDetalleList = (doc: ConsultaAsegNomDoc) => {
                             <td>{{ detalle.coDescripcion }}</td>
                             <td>{{ detalle.feNacimiento }}</td>
                             <td>{{ detalle.coParentesco }}</td>
+                            <td>{{ estadoLabels[detalle.coEsPaciente] || detalle.coEsPaciente || 'N/D' }}</td>
                             <td>{{ detalle.noContratante }}</td>
                           </tr>
                         </tbody>
@@ -240,5 +288,15 @@ const getDetalleList = (doc: ConsultaAsegNomDoc) => {
 <style scoped>
 .clickable-row {
   cursor: pointer;
+}
+.details-scroll {
+  max-height: 360px;
+  overflow-y: auto;
+}
+.details-scroll table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-strong, #f8fafc);
+  z-index: 1;
 }
 </style>

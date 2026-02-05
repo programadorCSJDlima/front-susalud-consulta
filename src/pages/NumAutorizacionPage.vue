@@ -1,28 +1,22 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, watch, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { apiClient } from '../services/apiClient'
-import { useConsultaAsegNomStore } from '../stores/consulta-aseg-nom.store'
+import { useConsultaAsegNomStore, type ConsultaAsegNomDetalle } from '../stores/consulta-aseg-nom.store'
+import { useConsultaAsegCodStore } from '../stores/consulta-aseg-cod.store'
 import { useNumAutorizacionStore } from '../stores/num-autorizacion.store'
 import { useLogAcreInsertStore } from '../stores/log-acre-insert.store'
+import { useUtilInputsStore } from '../stores/util-inputs.store'
+import { useToast } from 'vue-toast-notification'
 
 type NumAutorizacionPayload = {
   coExcepcion: string
   txNombre: string
   coIafa: string
-  noTransaccion: string
-  idRemitente: string
   idReceptor: string
   feTransaccion: string
   hoTransaccion: string
-  idCorrelativo: string
-  idTransaccion: string
-  tiFinalidad: string
-  caRemitente: string
-  nuRucRemitente: string
-  caReceptor: string
   coAdmisionista: string
-  caPaciente: string
   apPaternoPaciente: string
   noPaciente: string
   coAfPaciente: string
@@ -140,206 +134,528 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const expandedDocIndex = ref<number | null>(null)
 
+const utilInputsStore = useUtilInputsStore()
+const { consultaNomCoIafa } = storeToRefs(utilInputsStore)
+
 const consultaAsegNomStore = useConsultaAsegNomStore()
 const numAutorizacionStore = useNumAutorizacionStore()
+numAutorizacionStore.hydrateFromStorage()
+const consultaAsegCodStore = useConsultaAsegCodStore()
 const logAcreInsertStore = useLogAcreInsertStore()
+const toast = useToast()
 const { datosPaciente } = storeToRefs(consultaAsegNomStore)
+
+const currentPaciente = datosPaciente.value
+
+const getFechaActual = () => {
+  const hoy = new Date()
+  const yyyy = hoy.getFullYear()
+  const mm = String(hoy.getMonth() + 1).padStart(2, '0')
+  const dd = String(hoy.getDate()).padStart(2, '0')
+  return `${yyyy}${mm}${dd}`
+}
+
+const getHoraActual = () => {
+  const hoy = new Date()
+  const HH = String(hoy.getHours()).padStart(2, '0')
+  const MM = String(hoy.getMinutes()).padStart(2, '0')
+  const SS = String(hoy.getSeconds()).padStart(2, '0')
+  return `${HH}${MM}${SS}`
+}
 
 const formData = reactive<NumAutorizacionPayload>({
   coExcepcion: '0000',
   txNombre: '271_SOL_AUT',
-  coIafa: '20028',
-  noTransaccion: '271_SOL_AUT',
-  idRemitente: '00008786',
-  idReceptor: '20028',
-  feTransaccion: '20250121',
-  hoTransaccion: '102000',
-  idCorrelativo: '0001',
-  idTransaccion: '271',
-  tiFinalidad: '13',
-  caRemitente: '2',
-  nuRucRemitente: '20144442629',
-  caReceptor: '2',
-  coAdmisionista: '',
-  caPaciente: '1',
-  apPaternoPaciente: 'SUAREZ',
-  noPaciente: 'JUAN CARLOS',
-  coAfPaciente: '13660',
-  apMaternoPaciente: '',
-  coEsPaciente: '',
-  tiDoPaciente: '1',
-  nuDoPaciente: '44960708',
-  nuIdenEmpleador: '',
-  nuContratoPaciente: '',
-  nuPoliza: '',
+  coIafa: consultaNomCoIafa.value,
+  idReceptor: consultaNomCoIafa.value,
+  feTransaccion: getFechaActual(),
+  hoTransaccion: getHoraActual(),
+  coAdmisionista: 'UP_OFTALMOSALUD',
+  
+  apPaternoPaciente: currentPaciente?.apPaternoPaciente ?? '',
+  noPaciente: currentPaciente?.noPaciente ?? '',
+  coAfPaciente: currentPaciente?.coAfPaciente ?? '',
+  apMaternoPaciente: currentPaciente?.apMaternoPaciente ?? '',
+  coEsPaciente: currentPaciente?.coEsPaciente ?? '1', //vigente->
+  tiDoPaciente: currentPaciente?.tiDoPaciente ?? '1',
+  nuDoPaciente: currentPaciente?.nuDoPaciente ?? '',
+  nuIdenEmpleador:currentPaciente?.coReContratante??'', //ruc o dni del contratante->
+  nuContratoPaciente:currentPaciente?.nuContratoPaciente??'', //contrato paciente->
+  nuPoliza: '', //poliza-->se pide nunca se envia vacio
   nuCertificado: '',
   coTiPolizaAfiliacion: '1',
-  coProducto: 'PS040',
-  deProducto: 'INTEGRAL PLUS INDIVIDUAL',
-  nuPlan: '21668A1',
-  tiPlanSalud: '',
-  coMoneda: '1',
-  coParentesco: '',
-  soBeneficio: '',
-  nuSoBeneficio: '',
-  coEspecialidad: '',
-  feNacimiento: '19870724',
-  genero: '',
-  esMarital: '',
-  feIniVigencia: '20040701',
+  coProducto: currentPaciente?.coProducto ?? '',
+  deProducto: currentPaciente?.coDescripcion ?? '',
+  nuPlan: currentPaciente?.nuPlan ?? '',
+  tiPlanSalud: '', //tipo de planse pide nunca se envia vacio
+  coMoneda: '', //tipo de planse pide nunca se envia vacio
+  coParentesco: '', //tipo de planse pide nunca se envia vacio
+  soBeneficio: '', //-> nopide toast
+  nuSoBeneficio: '', //-> no pide toast
+  coEspecialidad: currentPaciente?.coEsPaciente ?? '',
+  feNacimiento: currentPaciente?.feNacimiento ?? '',
+  genero: currentPaciente?.genero ?? '',
+  esMarital:currentPaciente?.esMarital ?? '',
+  feIniVigencia: getFechaActual(), 
   feFinVigencia: '',
-  esCobertura: '',
+  //acctidente
+  esCobertura: '1', //nose de donde viene
   nuDecAccidente: '',
   idInfAccidente: '',
   deTiAccidente: '',
   feAfiliacion: '',
   feOcuAccidente: '',
+  //derivacion farmacia
   nuAtencion: '',
   idDerFarmacia: '',
   tiProducto: '',
   deProductoDeFarmacia: '',
   feAtencion: '',
+  //cobertura
   nuCobertura: '4',
   obsCobertura: '',
   msgObs: '',
   msgConEspeciales: '',
+
+  // contratante
   caContratante: '2',
-  noPaContratante: 'LA TORRE',
-  noContratante: 'NORMA CECILIA',
-  noMaContratante: 'SILVA',
-  tiDoContratante: '1',
-  idReContratante: 'XX5',
-  coReContratante: '07411059',
-  caTitular: '',
-  noPaTitular: '',
-  noTitular: '',
-  coAfTitular: '',
-  noMaTitular: '',
-  tiDoTitular: '',
-  idReTitular: '',
+  noPaContratante: currentPaciente?.noPaContratante ?? '',
+  noContratante: currentPaciente?.noContratante ?? '',
+  noMaContratante: currentPaciente?.noMaContratante ?? '',
+  tiDoContratante: currentPaciente?.tiDoContratante ?? '1',
+  idReContratante: currentPaciente?.idReContratante ?? '',
+  coReContratante: currentPaciente?.coReContratante ?? '',
+  
+  // titular
+  caTitular: '', //->
+  noPaTitular: '', //->
+  noTitular: '', //->
+  coAfTitular: '', //->
+  noMaTitular: '', //->
+  tiDoTitular: '', //->
+  idReTitular: 'XX5',
   nuDoTitular: '',
-  feIncTitular: '20040701',
-  nuCobPreExistencia: '4',
-  beMaxInicial: '50',
-  canServicio: '1',
-  idDeProducto: '',
-  coTiCobertura: '4',
-  coSubTiCobertura: '100',
-  msgObsPre: '',
-  msgConEspecialesPre: '',
-  coTiMoneda: '1',
-  coPagoFijo: '60',
-  coCalServicio: 'Z3',
-  canCalServicio: '',
-  coPagoVariable: '0.50',
-  flagCG: '0',
-  deflagCG: '',
-  feFinCarencia: '',
-  feFinEspera: '',
+  feIncTitular: getFechaActual(),
+
+  //Coberturas preexistencias
+  nuCobPreExistencia: '4', //hc->
+  beMaxInicial: '50', //->
+  canServicio: '1', //->hc opc
+  idDeProducto: '', //->
+  coTiCobertura: '', //->
+  coSubTiCobertura: '', //->
+  msgObsPre: '',//puede Ir Vacio
+  msgConEspecialesPre: '', //puede Ir Vacio
+  coTiMoneda: '1', //->
+  coPagoFijo: '60', //->
+  coCalServicio: '', //->
+  canCalServicio: '', //->
+  coPagoVariable: '0.50', //->
+  flagCG: '0', //->
+  deflagCG: '', // puede ir vacio
+  feFinCarencia: '', //puede irvacio
+  feFinEspera: '', //puede ir vacio
+  
   caRegafi: '1',
-  noPaRegafi: 'SUAREZ',
-  noRegafi: 'JUAN CARLOS',
-  coAfRegafi: '13660',
-  noMaRegafi: '',
-  tiDoRegafi: '1',
-  idReRegafi: 'XX5',
-  nuDoRegafi: '44960708',
-  feNaRegafi: '19870724',
+  noPaRegafi: currentPaciente?.apPaternoPaciente ?? '',
+  noRegafi: currentPaciente?.noPaciente ?? '',
+  coAfRegafi: currentPaciente?.coAfPaciente ?? '',
+  noMaRegafi: currentPaciente?.apMaternoPaciente ?? '',
+  tiDoRegafi: currentPaciente?.tiDoPaciente ?? '1',
+  idReRegafi: currentPaciente?.idReContratante ?? '',
+  nuDoRegafi: currentPaciente?.nuDoPaciente ?? '',
+  feNaRegafi: currentPaciente?.feNacimiento ?? '',
   geRegafi: '',
   coPaisRegafi: '',
 })
 
-watch(
-  datosPaciente,
-  (paciente) => {
-    if (!paciente) return
+const populateFormFromPaciente = (paciente: ConsultaAsegNomDetalle | null) => {
+  if (!paciente) {
+    return
+  }
+  formData.apPaternoPaciente = paciente.apPaternoPaciente ?? formData.apPaternoPaciente
+  formData.apMaternoPaciente = paciente.apMaternoPaciente ?? ''
+  formData.noPaciente = paciente.noPaciente ?? formData.noPaciente
+  formData.coAfPaciente = paciente.coAfPaciente ?? formData.coAfPaciente
+  formData.coEsPaciente = paciente.coEsPaciente ?? formData.coEsPaciente
+  formData.tiDoPaciente = paciente.tiDoPaciente ?? formData.tiDoPaciente
+  formData.nuDoPaciente = paciente.nuDoPaciente ?? formData.nuDoPaciente
+  formData.coProducto = paciente.coProducto ?? formData.coProducto
+  formData.deProducto = paciente.coDescripcion ?? formData.deProducto
+  formData.nuPlan = paciente.nuPlan ?? formData.nuPlan
+  formData.coEspecialidad = paciente.coEsPaciente ?? formData.coEspecialidad
+  formData.feNacimiento = paciente.feNacimiento ?? formData.feNacimiento
+  formData.noPaContratante = paciente.noPaContratante ?? formData.noPaContratante
+  formData.noContratante = paciente.noContratante ?? formData.noContratante
+  formData.noMaContratante = paciente.noMaContratante ?? formData.noMaContratante
+  formData.tiDoContratante = paciente.tiDoContratante ?? formData.tiDoContratante
+  formData.idReContratante = paciente.idReContratante ?? formData.idReContratante
+  formData.coReContratante = paciente.coReContratante ?? formData.coReContratante
+  formData.noPaRegafi = paciente.apPaternoPaciente ?? formData.noPaRegafi
+  formData.noRegafi = paciente.noPaciente ?? formData.noRegafi
+  formData.coAfRegafi = paciente.coAfPaciente ?? formData.coAfRegafi
+  formData.noMaRegafi = paciente.apMaternoPaciente ?? formData.noMaRegafi
+  formData.tiDoRegafi = paciente.tiDoPaciente ?? formData.tiDoRegafi
+  formData.idReRegafi = paciente.idReContratante ?? formData.idReRegafi
+  formData.nuDoRegafi = paciente.nuDoPaciente ?? formData.nuDoRegafi
+  formData.feNaRegafi = paciente.feNacimiento ?? formData.feNaRegafi
+}
 
-    if (paciente.feNacimiento) {
-      formData.feNaRegafi = paciente.feNacimiento
-      formData.feNacimiento = paciente.feNacimiento
+populateFormFromPaciente(currentPaciente || null)
+
+watch(datosPaciente, paciente => {
+  populateFormFromPaciente(paciente || null)
+})
+
+watch(
+  () => formData.coIafa,
+  value => {
+    if (value !== consultaNomCoIafa.value) {
+      utilInputsStore.setConsultaNomCoIafa(value)
     }
-    if (paciente.nuDoPaciente) {
-      formData.nuDoRegafi = paciente.nuDoPaciente
-      formData.nuDoPaciente = paciente.nuDoPaciente
+    formData.idReceptor = value
+  }
+)
+
+watch(consultaNomCoIafa, value => {
+  if (value !== formData.coIafa) {
+    formData.coIafa = value
+  }
+  formData.idReceptor = value
+})
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.nuPoliza,
+  value => {
+    if (value) {
+      formData.nuPoliza = value
     }
-    if (paciente.tiDoPaciente) {
-      formData.tiDoRegafi = paciente.tiDoPaciente
-      formData.tiDoPaciente = paciente.tiDoPaciente
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.tiPlanSalud,
+  value => {
+    if (value) {
+      formData.tiPlanSalud = value
     }
-    if (paciente.coAfPaciente) {
-      formData.coAfRegafi = paciente.coAfPaciente
-      formData.coAfPaciente = paciente.coAfPaciente
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.coParentesco,
+  value => {
+    if (value) {
+      formData.coParentesco = value
     }
-    if (paciente.noPaciente) {
-      formData.noRegafi = paciente.noPaciente
-      formData.noPaciente = paciente.noPaciente
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.coMoneda,
+  value => {
+    if (value) {
+      formData.coMoneda = value
     }
-    if (paciente.apPaternoPaciente) {
-      formData.noPaRegafi = paciente.apPaternoPaciente
-      formData.apPaternoPaciente = paciente.apPaternoPaciente
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.soBeneficio,
+  value => {
+    if (value) {
+      formData.soBeneficio = value
     }
-    if (paciente.idReContratante) {
-      formData.idReRegafi = paciente.idReContratante
-      formData.idReContratante = paciente.idReContratante
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.nuSoBeneficio,
+  value => {
+    if (value) {
+      formData.nuSoBeneficio = value
     }
-    if (paciente.coReContratante) {
-      formData.coReContratante = paciente.coReContratante
+  },
+  { immediate: true }
+)
+
+watch(
+  () =>
+    consultaAsegCodStore.response?.resultCod?.[0]?.detalles?.[0]?.numCobertura ??
+    consultaAsegCodStore.response?.resultCod?.[0]?.inConCod271Detalles?.[0]?.nuCobertura,
+  value => {
+    if (value) {
+      formData.nuCobertura = value
     }
-    if (paciente.tiDoContratante) {
-      formData.tiDoContratante = paciente.tiDoContratante
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.caTitular,
+  value => {
+    if (value) {
+      formData.caTitular = value
     }
-    if (paciente.noMaContratante) {
-      formData.noMaContratante = paciente.noMaContratante
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.noPaTitular,
+  value => {
+    if (value) {
+      formData.noPaTitular = value
     }
-    if (paciente.noContratante) {
-      formData.noContratante = paciente.noContratante
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.noTitular,
+  value => {
+    if (value) {
+      formData.noTitular = value
     }
-    if (paciente.noPaContratante) {
-      formData.noPaContratante = paciente.noPaContratante
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.coAfTitular,
+  value => {
+    if (value) {
+      formData.coAfTitular = value
     }
-    if (paciente.coDescripcion) {
-      formData.deProducto = paciente.coDescripcion
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.noMaTitular,
+  value => {
+    if (value) {
+      formData.noMaTitular = value
     }
-    if (paciente.coProducto) {
-      formData.coProducto = paciente.coProducto
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.tiDoTitular,
+  value => {
+    if (value) {
+      formData.tiDoTitular = value
     }
-    if (paciente.apMaternoPaciente) {
-      formData.apMaternoPaciente = paciente.apMaternoPaciente
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.nuDoTitular,
+  value => {
+    if (value) {
+      formData.nuDoTitular = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => consultaAsegCodStore.response?.resultCod?.[0]?.feInsTitular,
+  value => {
+    if (value) {
+      formData.feIncTitular = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () =>
+    consultaAsegCodStore.response?.resultCod?.[0]?.detalles?.[0]?.beMaxInicial ??
+    consultaAsegCodStore.response?.resultCod?.[0]?.inConCod271Detalles?.[0]?.beMaxInicial,
+  value => {
+    if (value) {
+      formData.beMaxInicial = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () =>
+    consultaAsegCodStore.response?.resultCod?.[0]?.detalles?.[0]?.idProducto ??
+    consultaAsegCodStore.response?.resultCod?.[0]?.inConCod271Detalles?.[0]?.idProducto,
+  value => {
+    if (value) {
+      formData.idDeProducto = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () =>
+    consultaAsegCodStore.response?.resultCod?.[0]?.detalles?.[0]?.coTiCobertura ??
+    consultaAsegCodStore.response?.resultCod?.[0]?.inConCod271Detalles?.[0]?.coTiCobertura,
+  value => {
+    if (value) {
+      formData.coTiCobertura = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () =>
+    consultaAsegCodStore.response?.resultCod?.[0]?.detalles?.[0]?.coSubTiCobertura ??
+    consultaAsegCodStore.response?.resultCod?.[0]?.inConCod271Detalles?.[0]?.coSubTiCobertura,
+  value => {
+    if (value) {
+      formData.coSubTiCobertura = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () =>
+    consultaAsegCodStore.response?.resultCod?.[0]?.detalles?.[0]?.coTiMoneda ??
+    consultaAsegCodStore.response?.resultCod?.[0]?.inConCod271Detalles?.[0]?.coTiMoneda,
+  value => {
+    if (value) {
+      formData.coTiMoneda = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () =>
+    consultaAsegCodStore.response?.resultCod?.[0]?.detalles?.[0]?.coPagoFijo ??
+    consultaAsegCodStore.response?.resultCod?.[0]?.inConCod271Detalles?.[0]?.coPagoFijo,
+  value => {
+    if (value) {
+      formData.coPagoFijo = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () =>
+    consultaAsegCodStore.response?.resultCod?.[0]?.detalles?.[0]?.coCalServicio ??
+    consultaAsegCodStore.response?.resultCod?.[0]?.inConCod271Detalles?.[0]?.coCalServicio,
+  value => {
+    if (value) {
+      formData.coCalServicio = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () =>
+    consultaAsegCodStore.response?.resultCod?.[0]?.detalles?.[0]?.canCalServicio ??
+    consultaAsegCodStore.response?.resultCod?.[0]?.inConCod271Detalles?.[0]?.canCalServicio,
+  value => {
+    if (value) {
+      formData.canCalServicio = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () =>
+    consultaAsegCodStore.response?.resultCod?.[0]?.detalles?.[0]?.coPagoVariable ??
+    consultaAsegCodStore.response?.resultCod?.[0]?.inConCod271Detalles?.[0]?.coPagoVariable,
+  value => {
+    if (value) {
+      formData.coPagoVariable = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () =>
+    consultaAsegCodStore.response?.resultCod?.[0]?.detalles?.[0]?.flagCartaGarantia ??
+    consultaAsegCodStore.response?.resultCod?.[0]?.inConCod271Detalles?.[0]?.flagCaGarantia,
+  value => {
+    if (value) {
+      formData.flagCG = value
     }
   },
   { immediate: true }
 )
 
 const sampleResponse: NumAutorizacionResponse = {
-  coError: '0000',
-  txNombre: '997_RES_AUT',
-  coIafa: '20028',
+  coError: '',
+  txNombre: '',
+  coIafa: '',
   txtConsulta:
-    'ISA*00*          *00*          *ZZ*20028          *ZZ*00008786       *251210*2316*|*00501*000000001*0*T*:~GS*FA*20028 ... (trama de consulta de ejemplo)',
+    '',
   txRespuesta:
-    'ISA*00*          *00*          *ZZ*20028          *ZZ*00008786       *251210*2316*|*00501*000000001*0*T*:~GS*FA*20028          *00008786       *20251210*231628  *046960512*X *00501       ~ST*997*16833427 *                                   ~AK1*PO*46960512 *000000360   ~AK2*997*16833427 *                                   ~AK5*A*001~AK9*A*1*1     *1     ~SE*7         *16833427 ~GE*1     *046960512~IEA*1    *000000001~',
+    '',
   resAut: [
-    {
-      noTransaccion: '997_RES_AUT',
-      idRemitente: '20028',
-      idReceptor: '00008786',
-      feTransaccion: '20251210',
-      hoTransaccion: '231628',
-      idCorrelativo: '000000001',
-      idTransaccion: '997',
-      nuAutorizacion: '000000360',
-      coSeguridad: '',
-      coError: 'A',
-      inCoErrorEncontrado: '001',
-      nuControl: null,
-      nuControlST: null,
-    },
+
   ],
 }
 
 const responseData = ref<NumAutorizacionResponse | null>(sampleResponse)
 
+const syncFechaHora = () => {
+  formData.feTransaccion = getFechaActual()
+  formData.hoTransaccion = getHoraActual()
+}
+
+let fechaHoraInterval: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  syncFechaHora()
+  fechaHoraInterval = setInterval(syncFechaHora, 1000)
+})
+
+onUnmounted(() => {
+  if (fechaHoraInterval) {
+    clearInterval(fechaHoraInterval)
+    fechaHoraInterval = null
+  }
+})
+
 const enviarConsulta = async () => {
+  if (!formData.nuPoliza.trim()) {
+    const msg = 'Debe contar con un número de póliza antes de registrar.'
+    toast.error(msg)
+    error.value = msg
+    return
+  }
+  if (!formData.tiPlanSalud.trim()) {
+    const msg = 'Debe contar con un tipo de plan de salud antes de registrar.'
+    toast.error(msg)
+    error.value = msg
+    return
+  }
+  if (!formData.coParentesco.trim()) {
+    const msg = 'Debe contar con un grado de parentesco antes de registrar.'
+    toast.error(msg)
+    error.value = msg
+    return
+  }
+  if (!formData.coMoneda.trim()) {
+    const msg = 'Debe contar con un tipo de moneda antes de registrar.'
+    toast.error(msg)
+    error.value = msg
+    return
+  }
+  syncFechaHora()
   responseData.value = null
   loading.value = true
   error.value = null
@@ -387,19 +703,10 @@ const toggleDetalles = (index: number) => {
               <tr><td>coExcepcion</td><td><input v-model="formData.coExcepcion" class="input" /></td></tr>
               <tr><td>txNombre</td><td><input v-model="formData.txNombre" class="input" /></td></tr>
               <tr><td>coIafa</td><td><input v-model="formData.coIafa" class="input" /></td></tr>
-              <tr><td>noTransaccion</td><td><input v-model="formData.noTransaccion" class="input" /></td></tr>
-              <tr><td>idRemitente</td><td><input v-model="formData.idRemitente" class="input" /></td></tr>
               <tr><td>idReceptor</td><td><input v-model="formData.idReceptor" class="input" /></td></tr>
               <tr><td>feTransaccion</td><td><input v-model="formData.feTransaccion" class="input" /></td></tr>
               <tr><td>hoTransaccion</td><td><input v-model="formData.hoTransaccion" class="input" /></td></tr>
-              <tr><td>idCorrelativo</td><td><input v-model="formData.idCorrelativo" class="input" /></td></tr>
-              <tr><td>idTransaccion</td><td><input v-model="formData.idTransaccion" class="input" /></td></tr>
-              <tr><td>tiFinalidad</td><td><input v-model="formData.tiFinalidad" class="input" /></td></tr>
-              <tr><td>caRemitente</td><td><input v-model="formData.caRemitente" class="input" /></td></tr>
-              <tr><td>nuRucRemitente</td><td><input v-model="formData.nuRucRemitente" class="input" /></td></tr>
-              <tr><td>caReceptor</td><td><input v-model="formData.caReceptor" class="input" /></td></tr>
               <tr><td>coAdmisionista</td><td><input v-model="formData.coAdmisionista" class="input" /></td></tr>
-              <tr><td>caPaciente</td><td><input v-model="formData.caPaciente" class="input" /></td></tr>
               <tr><td>apPaternoPaciente</td><td><input v-model="formData.apPaternoPaciente" class="input" /></td></tr>
               <tr><td>apMaternoPaciente</td><td><input v-model="formData.apMaternoPaciente" class="input" /></td></tr>
               <tr><td>noPaciente</td><td><input v-model="formData.noPaciente" class="input" /></td></tr>

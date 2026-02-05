@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { apiClient } from '../services/apiClient'
+import { useUtilInputsStore } from '../stores/util-inputs.store'
+import { storeToRefs } from 'pinia'
+import { useConsultaAsegNomStore } from '../stores/consulta-aseg-nom.store'
+
+
+const utilInputsStore = useUtilInputsStore()
+const { consultaNomCoIafa } = storeToRefs(utilInputsStore)
+
+const consultaAsegNomStore = useConsultaAsegNomStore()
+const { datosPaciente } = storeToRefs(consultaAsegNomStore)
+
+const currentPaciente = datosPaciente.value
+
 
 type ConsultaEntVinculadaPayload = {
   coExcepcion: string
@@ -53,15 +66,31 @@ const endpoint = ref('/getConsultaEntVinculada')
 const loading = ref(false)
 const error = ref<string | null>(null)
 
+const getFechaActual = () => {
+  const hoy = new Date()
+  const yyyy = hoy.getFullYear()
+  const mm = String(hoy.getMonth() + 1).padStart(2, '0')
+  const dd = String(hoy.getDate()).padStart(2, '0')
+  return `${yyyy}${mm}${dd}`
+}
+
+const getHoraActual = () => {
+  const hoy = new Date()
+  const HH = String(hoy.getHours()).padStart(2, '0')
+  const MM = String(hoy.getMinutes()).padStart(2, '0')
+  const SS = String(hoy.getSeconds()).padStart(2, '0')
+  return `${HH}${MM}${SS}`
+}
+
 const formData = reactive<ConsultaEntVinculadaPayload>({
   coExcepcion: '0000',
   txNombre: '278_CON_ENT_VINC',
-  coIafa: '30004',
+  coIafa: consultaNomCoIafa.value,
   noTransaccion: '278_CON_ENT_VINC',
   idRemitente: '00008786',
-  idReceptor: '30004',
-  feTransaccion: '20250121',
-  hoTransaccion: '102000',
+  idReceptor: consultaNomCoIafa.value,
+  feTransaccion: getFechaActual(),
+  hoTransaccion: getHoraActual(),
   idCorrelativo: '0001',
   idTransaccion: '278',
   tiFinalidad: '13',
@@ -74,35 +103,20 @@ const formData = reactive<ConsultaEntVinculadaPayload>({
 })
 
 const sampleResponse: ConsultaEntVinculadaResponse = {
-  coError: '0000',
-  txNombre: '278_RES_ENT_VINC',
-  coIafa: '30004',
-  txRespuesta:
-    'ISA*00*          *00*          *ZZ*30004          *ZZ*00008786       *251215*1009*|*00501*202500216*0*T*:~GS*HB*30004          *00008786       *20251215*100909  *030981308*X *00501       ~ST*278*18320132 *                                   ~BHT*0020*11~HL*1           *            *20*0~CRC*ZZ*Y*00 ~MSG*Es Entidad vinculada                                                                                                                                                                                                                                                    *  *  ~SE*7         *18320132 ~GE*1     *030981308~IEA*1    *202500216~',
-  detalles: 'pe.gob.susalud.jr.transaccion.susalud.bean.InConEntVinc278@4f5639bf',
+  coError: '',
+  txNombre: '',
+  coIafa: '',
+  txRespuesta:'',
   entidadesVinculadas: [
-    {
-      noTransaccion: '278_CON_ENT_VINC',
-      idRemitente: '30004',
-      idReceptor: '00008786',
-      feTransaccion: '20251215',
-      hoTransaccion: '100909',
-      idCorrelativo: '202500216',
-      idTransaccion: '278',
-      tiFinalidad: '11',
-      caIPRESS: null,
-      noIPRESS: null,
-      tiDoIPRESS: null,
-      nuRucIPRESS: null,
-      nuControl: null,
-      nuControlST: null,
-    },
+
   ],
 }
 
 const responseData = ref<ConsultaEntVinculadaResponse | null>(sampleResponse)
 
 const enviarConsulta = async () => {
+  formData.feTransaccion = getFechaActual()
+  formData.hoTransaccion = getHoraActual()
   responseData.value = null
   loading.value = true
   error.value = null

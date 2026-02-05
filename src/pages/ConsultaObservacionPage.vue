@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { apiClient } from '../services/apiClient'
+import { useUtilInputsStore } from '../stores/util-inputs.store'
+import { storeToRefs } from 'pinia'
+import { useConsultaAsegNomStore } from '../stores/consulta-aseg-nom.store'
 
 type ConsultaObsPayload = {
   coExcepcion: string
@@ -56,53 +59,40 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const expandedDocIndex = ref<number | null>(null)
 
+const utilInputsStore = useUtilInputsStore()
+const { consultaNomCoIafa } = storeToRefs(utilInputsStore)
+
+const consultaAsegNomStore = useConsultaAsegNomStore()
+const { datosPaciente } = storeToRefs(consultaAsegNomStore)
+
+const currentPaciente = datosPaciente.value
+
+
 const formData = reactive<ConsultaObsPayload>({
   coExcepcion: '0000',
   txNombre: '270_CON_ASE',
-  coIafa: '20028',
-  tipodocument: '1',
-  document: '44960708',
-  apPaterno: 'SUAREZ',
-  apMaterno: '',
-  nombres: 'JUAN CARLOS',
-  coAfiliado: '13660',
-  coProducto: 'PS040',
-  deProducto: 'INTEGRAL PLUS INDIVIDUAL',
+  coIafa: consultaNomCoIafa.value,
+  tipodocument: currentPaciente?.tiDoPaciente ?? '1',
+  document: currentPaciente?.nuDoPaciente ?? '',
+  apPaterno: currentPaciente?.apPaternoPaciente ?? '',
+  apMaterno: currentPaciente?.apMaternoPaciente ?? '',
+  nombres: currentPaciente?.noPaciente ?? '',
+  coAfiliado: currentPaciente?.coAfPaciente ?? '',
+  coProducto: currentPaciente?.coProducto ?? '',
+  deProducto: currentPaciente?.coDescripcion ?? '',
   coInProducto: '001',
-  nuCobertura: '4',
-  nuPlan: '21668A1',
+  nuCobertura: '6',
+  nuPlan: currentPaciente?.nuPlan ?? '',
 })
 
 const sampleResponse: ConsultaObsResponse = {
-  coError: '0000',
-  txNombre: '271_CON_OBS',
-  coIafa: '20028',
+  coError: '',
+  txNombre: '',
+  coIafa: '',
   txRespuesta:
-    'ISA*00*          *00*          *ZZ*20028          *ZZ*00008786       *251210*1906*|*00501*000000001*0*T*:~GS*HB*20028          *00008786       *20251210*190638  *086695710*X *00501       ~ST*271*38707151 *                                   ~BHT*0022*11~HL*1           *            *20*1~NM1*PR *2*                                                            *                                   *                         *          *          *PI*20028               *  *   *                                                            ~HL*2           *1           *21*1~NM1*1P *2*                                                            *                                   *                         *          *          *SV*20563648202         *  *   *                                                            ~HL*3           *2           *22*1~NM1*IL *1*SUAREZ                                                      *JUAN CARLOS                        *                         *          *          *MI*13660               *  *   *LA TORRE                                                    ~EB*1 *   *                                   *   *                                                  *                                   *                  *          *  *   *   *                                   ~MSG*1                                                                                                                                                                                                                                                                       *  *  ~MSG*1                                                                                                                                                                                                                                                                       *  *  ~SE*13        *38707151 ~GE*1     *086695710~IEA*1    *000000001~',
+    '',
   resObs: [
-    {
-      noTransaccion: '271_CON_OBS',
-      idRemitente: '20028',
-      idReceptor: '00008786',
-      feTransaccion: '20251210',
-      hoTransaccion: '190638',
-      idCorrelativo: '000000001',
-      idTransaccion: '271',
-      tiFinalidad: '11',
-      caRemitente: '2',
-      caReceptor: '2',
-      nuRucReceptor: '20563648202',
-      caPaciente: '1',
-      apPaternoPaciente: 'SUAREZ',
-      noPaciente: 'JUAN CARLOS',
-      coAfPaciente: '13660',
-      apMaternoPaciente: 'LA TORRE',
-      coSubCobertura: '',
-      teMsgLibre1: '1',
-      teMsgLibre2: '1',
-      nuControl: null,
-      nuControlST: null,
-    },
+
   ],
 }
 

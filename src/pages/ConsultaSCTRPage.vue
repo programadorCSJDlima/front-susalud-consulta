@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { apiClient } from '../services/apiClient'
+import { storeToRefs } from 'pinia'
+import { useConsultaAsegNomStore } from '../stores/consulta-aseg-nom.store'
+import { useUtilInputsStore } from '../stores/util-inputs.store'
+
+
+const consultaAsegNomStore = useConsultaAsegNomStore()
+const { datosPaciente } = storeToRefs(consultaAsegNomStore)
+const currentPaciente = datosPaciente.value
+
+
+const utilInputsStore = useUtilInputsStore()
+const { consultaNomCoIafa } = storeToRefs(utilInputsStore)
+
 
 type ConsultaSctrPayload = {
   coExcepcion: string
@@ -83,78 +96,42 @@ const expandedDocIndex = ref<number | null>(null)
 const formData = reactive<ConsultaSctrPayload>({
   coExcepcion: '0000',
   txNombre: '270_CON_ASE',
-  coIafa: '20028',
-  tipodocument: '1',
-  document: '44960708',
-  apPaterno: 'SUAREZ',
-  apMaterno: '',
-  nombres: 'JUAN CARLOS',
-  coAfiliado: '13660',
-  coProducto: 'PS040',
-  deProducto: 'INTEGRAL PLUS INDIVIDUAL',
-  coEspecialidad: '006',
-  coParentesco: '5',
-  nuPlan: '21668A1',
-  tiCaContratante: '1',
-  noPaContratante: 'LA TORRE',
-  noContratante: 'NORMA CECILIA',
-  noMaContratante: 'SILVA',
-  tiDoContratante: '1',
-  coReContratante: '07411059',
+  coIafa: consultaNomCoIafa.value,
+  tipodocument: currentPaciente?.tiDoPaciente ?? '1',
+  document: currentPaciente?.nuDoPaciente ?? '',
+  apPaterno: currentPaciente?.apPaternoPaciente ?? '',
+  apMaterno: currentPaciente?.apMaternoPaciente ?? '',
+  nombres: currentPaciente?.noPaciente ?? '',
+  coAfiliado: currentPaciente?.coAfPaciente ?? '',
+  coProducto: currentPaciente?.coProducto ?? '0',
+  deProducto: currentPaciente?.coDescripcion ?? '',
+  coEspecialidad: currentPaciente?.coEsPaciente ?? '',
+  coParentesco: currentPaciente?.coParentesco ?? '',
+  nuPlan: currentPaciente?.nuPlan ?? '',
+  tiCaContratante: currentPaciente?.tiCaContratante ?? '1',
+  noPaContratante: currentPaciente?.noPaContratante ?? '',
+  noContratante: currentPaciente?.noContratante ?? '',
+  noMaContratante: currentPaciente?.noMaContratante ?? '',
+  tiDoContratante: currentPaciente?.tiDoContratante ?? '1',
+  coReContratante: currentPaciente?.coReContratante ?? '',
 })
 
 const sampleResponse: ConsultaSctrResponse = {
-  coError: '0000',
-  txNombre: '271_RES_SCTR',
-  coIafa: '20028',
-  txRespuesta: 'ISA*00*...~GS* HI*...~IEA*1 * 080332586 * ~ (ejemplo truncado)',
+  coError: '',
+  txNombre: '',
+  coIafa: '',
+  txRespuesta: '',
   resultSctr: [
-    {
-      noTransaccion: '271_RES_SCTR',
-      idRemitente: '980004A',
-      idReceptor: '980001C',
-      feTransaccion: '20070306',
-      hoTransaccion: '1709',
-      idCorrelativo: '080332586',
-      idTransaccion: '271',
-      tiFinalidad: '11',
-      caRemitente: '2',
-      caReceptor: '2',
-      nuRucReceptor: '20100054184',
-      caPaciente: '1',
-      apPaternoPaciente: 'BALLON',
-      noPaciente: 'ANGELA RITA',
-      coAfPaciente: '0000424421',
-      apMaternoPaciente: 'ARENAS',
-      coTiDoPaciente: '1',
-      nuDocPaciente: '08834001',
-      nuControl: null,
-      nuControlST: null,
-      in271ResSctrDetalles: [
-        {
-          tiCaContratante: '2',
-          noEmApPaContratante: 'COLTUR PERUANA DE TU',
-          coEmContratante: '00001',
-          idCaReContratante: '4A',
-          reIdContratante: '20100054184',
-          tiCaLuAtencion: '2',
-          noEmLuAtencion: 'CLINICA INTERNACIONAL',
-          coEmReLuAtencion: '980001C',
-          idCaReLuAtencion: '4A',
-          reIdLuAtencion: '20100973473',
-          coLuAtencion: '471000',
-          deTiAccidente: '',
-          feAfiliacion: '20040701',
-          feOcAccidente: '20150330',
-        },
-      ],
-    },
+  
   ],
 }
 
 const responseData = ref<ConsultaSctrResponse | null>(sampleResponse)
 
 const enviarConsulta = async () => {
+  if (!formData.tiCaContratante) {
+    formData.tiCaContratante = '1'
+  }
   responseData.value = null
   loading.value = true
   error.value = null
@@ -211,7 +188,15 @@ const getDetalleList = (doc: ConsultaSctrDoc) => doc.in271ResSctrDetalles || []
               <tr><td>coEspecialidad</td><td><input v-model="formData.coEspecialidad" class="input" /></td></tr>
               <tr><td>coParentesco</td><td><input v-model="formData.coParentesco" class="input" /></td></tr>
               <tr><td>nuPlan</td><td><input v-model="formData.nuPlan" class="input" /></td></tr>
-              <tr><td>tiCaContratante</td><td><input v-model="formData.tiCaContratante" class="input" /></td></tr>
+              <tr>
+                <td>tiCaContratante</td>
+                <td>
+                  <select v-model="formData.tiCaContratante" class="input">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                  </select>
+                </td>
+              </tr>
               <tr><td>noPaContratante</td><td><input v-model="formData.noPaContratante" class="input" /></td></tr>
               <tr><td>noContratante</td><td><input v-model="formData.noContratante" class="input" /></td></tr>
               <tr><td>noMaContratante</td><td><input v-model="formData.noMaContratante" class="input" /></td></tr>

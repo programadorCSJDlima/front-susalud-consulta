@@ -1,6 +1,22 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { apiClient } from '../services/apiClient'
+import { useUtilInputsStore } from '../stores/util-inputs.store'
+import { storeToRefs } from 'pinia'
+import { useConsultaAsegNomStore } from '../stores/consulta-aseg-nom.store'
+import { useConsultaAsegCodStore } from '../stores/consulta-aseg-cod.store'
+
+
+const utilInputsStore = useUtilInputsStore()
+const { consultaNomCoIafa } = storeToRefs(utilInputsStore)
+
+const consultaAsegNomStore = useConsultaAsegNomStore()
+const { datosPaciente } = storeToRefs(consultaAsegNomStore)
+
+const consultaAsegCodStore = useConsultaAsegCodStore()
+const { lastPayload } = storeToRefs(consultaAsegCodStore)
+
+const currentPaciente = datosPaciente.value
 
 type ConsultaDerivaPayload = {
   coExcepcion: string
@@ -66,37 +82,46 @@ const error = ref<string | null>(null)
 const formData = reactive<ConsultaDerivaPayload>({
   coExcepcion: '0000',
   txNombre: '270_CON_ASE',
-  coIafa: '20028',
-  tipodocument: '1',
-  document: '44741346',
-  apPaterno: 'RAMOS',
-  apMaterno: '',
-  nombres: 'JUAN RUPERTO',
-  coAfiliado: '13660',
-  coProducto: 'R',
-  deProducto: 'SEGURO COMPLEM. TRABAJO DE RIESG',
-  coEspecialidad: '6',
-  coParentesco: '1',
-  nuPlan: '20',
-  tiCaContratante: '2',
-  noPaContratante: 'ECO-RIN S.A.C.',
-  noContratante: 'ECO-RIN S.A.C. ECO-RIN S.A.C.',
-  noMaContratante: 'ECO-RIN S.A.C.',
-  tiDoContratante: '2',
-  coReContratante: '20523354851',
+  coIafa: consultaNomCoIafa.value,
+  tipodocument: currentPaciente?.tiDoPaciente ?? '1',
+  document: currentPaciente?.nuDoPaciente ?? '',
+  apPaterno: currentPaciente?.apPaternoPaciente ?? '',
+  apMaterno: currentPaciente?.apMaternoPaciente ?? '',
+  nombres: currentPaciente?.noPaciente ?? '',
+  coAfiliado: currentPaciente?.coAfPaciente ?? '',
+  coProducto: currentPaciente?.coProducto ?? '',
+  deProducto: currentPaciente?.coDescripcion ?? '',
+  coEspecialidad: currentPaciente?.coEsPaciente ?? '006',
+  coParentesco: lastPayload.value?.coParentesco ?? currentPaciente?.coParentesco ?? '5',
+  nuPlan: currentPaciente?.nuPlan ?? '',
+  tiCaContratante: currentPaciente?.tiCaContratante ?? '1',
+  noPaContratante: currentPaciente?.noPaContratante ?? '',
+  noContratante: currentPaciente?.noContratante ?? '',
+  noMaContratante: currentPaciente?.noMaContratante ?? '',
+  tiDoContratante: currentPaciente?.tiDoContratante ?? '1',
+  coReContratante: currentPaciente?.coReContratante ?? '',
 })
 
 const sampleResponse: ConsultaDerivaResponse = {
-  coError: '0440',
-  txNombre: '271_RES_DERIVA',
-  coIafa: '20028',
-  txRespuesta: 'La IPRESS no tiene convenio con la IAFAS',
+  coError: '',
+  txNombre: '',
+  coIafa: '',
+  txRespuesta: '',
   detalles: [],
 }
 
 const responseData = ref<ConsultaDerivaResponse | null>(sampleResponse)
 
+watch(lastPayload, payload => {
+  if (payload?.coParentesco) {
+    formData.coParentesco = payload.coParentesco
+  }
+})
+
 const enviarConsulta = async () => {
+  if (!formData.tiCaContratante) {
+    formData.tiCaContratante = '1'
+  }
   responseData.value = null
   loading.value = true
   error.value = null
@@ -116,6 +141,8 @@ const enviarConsulta = async () => {
   <section class="module-view">
     <h1>ConsultaDeriva</h1>
 
+    <p class="muted">Consulta los datos del asegurado para búsqueda por Derivación de Farmacia o un Centro Médico de apoyo o complementario.</p>
+     
     <div class="card-grid">
       <div class="api-box">
         <div class="table-wrapper">
@@ -141,7 +168,15 @@ const enviarConsulta = async () => {
               <tr><td>coEspecialidad</td><td><input v-model="formData.coEspecialidad" class="input" /></td></tr>
               <tr><td>coParentesco</td><td><input v-model="formData.coParentesco" class="input" /></td></tr>
               <tr><td>nuPlan</td><td><input v-model="formData.nuPlan" class="input" /></td></tr>
-              <tr><td>tiCaContratante</td><td><input v-model="formData.tiCaContratante" class="input" /></td></tr>
+              <tr>
+                <td>tiCaContratante</td>
+                <td>
+                  <select v-model="formData.tiCaContratante" class="input">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                  </select>
+                </td>
+              </tr>
               <tr><td>noPaContratante</td><td><input v-model="formData.noPaContratante" class="input" /></td></tr>
               <tr><td>noContratante</td><td><input v-model="formData.noContratante" class="input" /></td></tr>
               <tr><td>noMaContratante</td><td><input v-model="formData.noMaContratante" class="input" /></td></tr>

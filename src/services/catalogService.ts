@@ -7,9 +7,18 @@ export type CatalogSyncPayload = {
 
 export type CatalogSyncResponse = unknown
 
+const buildCatalogFilename = () => {
+  const now = new Date()
+  const pad = (value: number) => value.toString().padStart(2, '0')
+  const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(
+    now.getHours()
+  )}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`
+  return `catalogoSusalud${timestamp}.xml`
+}
+
 export const createDefaultCatalogSyncPayload = (): CatalogSyncPayload => ({
-  nuVersion: '1280',
-  noArchivo: 'archivoPrueba20252912.xml',
+  nuVersion: '1000',
+  noArchivo: buildCatalogFilename(),
 })
 
 export const syncCatalogos = (

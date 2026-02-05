@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { ConsultaAsegNomDetalle } from './consulta-aseg-nom.store'
 import type { NumAutorizacionDoc } from './num-autorizacion.store'
+import { DEFAULT_CONSULTA_NOM_CO_IAFA } from './util-inputs.store'
 
 export type LogAcreInsertPayload = {
   NoTransaccion: string
@@ -14,6 +15,7 @@ export type LogAcreInsertPayload = {
   CaRemitente: string
   NuRucRemitente: string
   CaReceptor: string
+  CoAdmisionista: string
   CaPaciente: string
   ApPaternoPaciente: string
   NoPaciente: string
@@ -55,15 +57,16 @@ export type LogAcreInsertPayload = {
 const initialPayload: LogAcreInsertPayload = {
   NoTransaccion: '271_LOG_ACRE_INSERT',
   IdRemitente: '00008786',
-  IdReceptor: '20028',
-  FeTransaccion: '20250121',
-  HoTransaccion: '102000',
+  IdReceptor: DEFAULT_CONSULTA_NOM_CO_IAFA,
+  FeTransaccion: getFechaActual(), // FECHA sistema
+  HoTransaccion: getHoraActual(),  // HORA sistema
   IdCorrelativo: '01',
   IdTransaccion: '271',
   TiFinalidad: '13',
   CaRemitente: '2',
   NuRucRemitente: '20144442629',
   CaReceptor: '2',
+  CoAdmisionista: 'ADM123',
   CaPaciente: '1',
   ApPaternoPaciente: 'SUAREZ',
   NoPaciente: 'JUAN CARLOS',
@@ -93,8 +96,8 @@ const initialPayload: LogAcreInsertPayload = {
   NoMaResponsableAut: '',
   TiDoResponsableAut: '',
   NuDoResponsableAut: '',
-  NuAutorizacion: '000000366',
-  FeHoAutorizacion: '20040701',
+  NuAutorizacion: '',
+  FeHoAutorizacion: getFechaHoraActual(), //FECHA Y HORA EN FORMATO CCYYMMDDHHMM
   BeMaxInicial: '50',
   CoPagoFijo: '60',
   CoPagoVariable: '0.50',
@@ -109,6 +112,8 @@ export const useLogAcreInsertStore = defineStore('logAcreInsert', {
   actions: {
     reset() {
       Object.assign(this.formData, initialPayload)
+      this.syncFechaHora()
+      this.syncFechaHoraAutorizacion()
     },
     updateFromPaciente(paciente: (ConsultaAsegNomDetalle & { feIniVigencia?: string }) | null) {
       if (!paciente) return
@@ -138,9 +143,51 @@ export const useLogAcreInsertStore = defineStore('logAcreInsert', {
       if (paciente.noMaContratante) fd.NoMaResponsableAut = paciente.noMaContratante
     },
     updateFromResAut(docs: NumAutorizacionDoc[] | null | undefined) {
-      if (docs?.length && docs[0].nuAutorizacion) {
-        this.formData.NuAutorizacion = docs[0].nuAutorizacion
+      if (!docs?.length) {
+        this.formData.NuAutorizacion = ''
+        return
       }
+      const doc = docs[0]
+      this.formData.NuAutorizacion = doc.nuAutorizacion || ''
+    },
+    setIdReceptorFromUtil(value: string) {
+      this.formData.IdReceptor = value || DEFAULT_CONSULTA_NOM_CO_IAFA
+    },
+    syncFechaHora() {
+      this.formData.FeTransaccion = getFechaActual()
+      this.formData.HoTransaccion = getHoraActual()
+    },
+    syncFechaHoraAutorizacion() {
+      this.formData.FeHoAutorizacion = getFechaHoraActual()
+    },
+    clearNumAutorizacion() {
+      this.formData.NuAutorizacion = ''
     },
   },
 })
+
+function getFechaActual() {
+  const hoy = new Date()
+  const yyyy = hoy.getFullYear()
+  const mm = String(hoy.getMonth() + 1).padStart(2, '0')
+  const dd = String(hoy.getDate()).padStart(2, '0')
+  return `${yyyy}${mm}${dd}`
+}
+
+function getHoraActual() {
+  const hoy = new Date()
+  const HH = String(hoy.getHours()).padStart(2, '0')
+  const MM = String(hoy.getMinutes()).padStart(2, '0')
+  const SS = String(hoy.getSeconds()).padStart(2, '0')
+  return `${HH}${MM}${SS}`
+}
+
+function getFechaHoraActual() {
+  const now = new Date()
+  const yyyy = now.getFullYear()
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  const HH = String(now.getHours()).padStart(2, '0')
+  const MM = String(now.getMinutes()).padStart(2, '0')
+  return `${yyyy}${mm}${dd}${HH}${MM}`
+}
